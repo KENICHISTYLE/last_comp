@@ -7,7 +7,7 @@ typing.cmx: ast.cmi typing.cmi
 mips.cmi:
 mips.cmo: mips.cmi
 mips.cmx: mips.cmi
-compile.cmo: compile.cmi
-compile.cmx: compile.cmi
-main.cmo: typing.cmi parser.cmi mips.cmi compile.cmi ast.cmi
-main.cmx: typing.cmx parser.cmx mips.cmx compile.cmx ast.cmi
+compile.cmo: typing.cmi ast.cmi compile.cmi
+compile.cmx: typing.cmx ast.cmi compile.cmi
+main.cmo: typing.cmi parser.cmi mips.cmi lexer.cmo compile.cmi ast.cmi
+main.cmx: typing.cmx parser.cmx mips.cmx lexer.cmx compile.cmx ast.cmi
