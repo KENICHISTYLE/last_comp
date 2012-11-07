@@ -1,0 +1,13 @@
+ast.cmi:
+parser.cmo: ast.cmi parser.cmi
+parser.cmx: ast.cmi parser.cmi
+typing.cmi: ast.cmi
+typing.cmo: ast.cmi typing.cmi
+typing.cmx: ast.cmi typing.cmi
+mips.cmi:
+mips.cmo: mips.cmi
+mips.cmx: mips.cmi
+compile.cmo: compile.cmi
+compile.cmx: compile.cmi
+main.cmo: typing.cmi parser.cmi mips.cmi compile.cmi ast.cmi
+main.cmx: typing.cmx parser.cmx mips.cmx compile.cmx ast.cmi
