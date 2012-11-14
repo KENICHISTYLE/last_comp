@@ -11,6 +11,21 @@ let struct_size = Hashtbl.create 1007
 
 let union_size = Hashtbl.create 1007
 
+type data = {allign : int; label : string; size : int} 
+
+let data_list = []
+
+let try_or_use id f t_size t_env = 
+  try
+    let size = Hashtbl.find t_size id in size
+  with 
+    Not_found ->
+      begin
+        let x = Hashtbl.find  t_env id in
+        let s = f x
+        in Hashtbl.add t_size id s;s
+      end
+
 let rec get_struct_size s =
   let z =
     List.fold_left 
@@ -23,15 +38,40 @@ let rec get_struct_size s =
           else 
             ((acc+(acc mod 4)) + 4)
         |Tstruct sid ->
-          let x = Hashtbl.find  struct_env sid.node in
-          get_struct_size x
+          try_or_use sid.node get_struct_size struct_size struct_env 
         |Tunion uid ->
-          let x = Hashtbl.find  union_env uid.node in
-          get_struct_size x     (* union size *)
+          try_or_use uid.node get_union_size union_size union_env 
         | _ -> 0
       ) 0 s
   in z + (z mod 4)
-    
+
+and  get_size  = function
+|Tchar -> 1
+|Tint |Tpointer _ ->4
+|Tunion y ->
+  try_or_use y.node get_union_size union_size union_env 
+|Tstruct y  ->
+  try_or_use y.node get_struct_size struct_size struct_env 
+
+|_ -> 0 (*on va rattraper les autres cas *)
+
+(*fonction calcule la taille de structure union*)
+and  get_union_size list_decl = 
+  begin
+    let max = ref 0 in
+    let comp (t,id) =
+      begin
+	let taille = get_size t
+      
+        in
+	if !max < taille then max :=taille
+      end
+    in
+    let ()= List.iter comp list_decl in
+   ( (!max + 3)/4)*4 
+  end
+
+
 let size_all_struct sl = 
   Hashtbl.iter (fun id dvl -> Hashtbl.add struct_size id (get_struct_size dvl)) sl 
 
@@ -45,6 +85,12 @@ let x = ref 0
 let rename id =  
   incr(x);{loc = id.loc ;node = id.node^string_of_int(!x)}
 
+
+
+
+
+
+
 let compile_decl d =
 match d with
 | Dvars dvl ->
@@ -55,7 +101,21 @@ match d with
   in Dvars res
 | Dstruct (id, decls) as d -> Hashtbl.add struct_env id.node decls;d
 | Dunion  (id, decls) as d -> Hashtbl.add union_env  id.node decls;d 
-| Dfun _ as d -> d 
+| Dfun (t,id,dvl,infb) as d -> d 
+
+
+let recup_data_list = function
+|Dvars dvl -> 
+  let res = List.map (fun (t,id) -> {allign = 4;label = id.node; size = get_size t}) dvl 
+  in res
+|Dfun (t,id,dvl,infb) -> 
+  let args = List.map (fun (t,id) -> {allign = 4;label = id.node; size = get_size t}) dvl 
+  in 
+  let total = {allign = 4; label = id.node; size = get_size t}::args
+  in total
+|_ -> assert false
+
+
 
 let compile_file ast = 
   let _res = List.map compile_decl ast in
