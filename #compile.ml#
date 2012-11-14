@@ -42,7 +42,7 @@ let print =
     (fun id s -> msg := " Struct : "^id ^", size : "^string_of_int(s) ) struct_size
 
 let x = ref 0 
-let rename id =  
+let rename id =    
   incr(x);{loc = id.loc ;node = id.node^string_of_int(!x)}
 
 let compile_decl d =
