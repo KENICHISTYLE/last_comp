@@ -7,8 +7,15 @@ Expression pas encore faite
  	sw   $ra, 0($fp)
 	sw   $fp, -4($fp)
 	.data
-main:
-	.space 12
+i:
 	.word 0
+main:
+i:
+	.word 0
+j:
+	.space 12
+i:
+	.word 0
+k:
 	.word 0
 
