@@ -1,8 +1,8 @@
 
 open Ast
 open Typing
-open Mips
-open Ast
+
+
 let struct_env = Typing.struct_env 
 
 let union_env = Typing.union_env
@@ -10,7 +10,8 @@ let union_env = Typing.union_env
 let struct_size = Hashtbl.create 1007
 
 let union_size = Hashtbl.create 1007
- 
+
+type data = {allign : int; label : label; size : int} 
 
 let data_list = []
 
@@ -88,7 +89,7 @@ let rename id =
 
 
 
-
+(*
 
 let compile_decl d =
 match d with
@@ -98,34 +99,22 @@ match d with
       (fun  (t,id) -> 
         (t,rename id))  dvl
   in Dvars res
-|_ -> assert false
 
-(* vd signfi variable declaration *)
-let recup_data vd = let ty = fst vd in
-		    let id = snd vd in
-		    match ty with 
-		    |Tint ->  Dword [Int32.zero]
-		    |Tchar -> Dbyte 1
-		    |Tstruct id|Tunion id ->
-		    begin
-		      let taille = get_size ty in
-		      Dspace taille
-		    end
-		    |Tpointer cy ->Daddress id.node
+*)
 
-let recup_data_list = function(*
+let recup_data_list = function
 |Dvars dvl -> 
   let res = List.map (fun (t,id) -> {allign = 4;label = id.node; size = get_size t}) dvl 
   in res
-	   
+
 | Dstruct (id, decls) as d -> Hashtbl.add struct_env id.node decls;d
 
 | Dunion  (id, decls) as d -> Hashtbl.add union_env  id.node decls;d 
-			      *)
-(* |Dfun (t,id,dvl,infb) -> 
+
+|Dfun (t,id,dvl,infb) -> 
   let args = List.map (fun (t,id) -> {allign = 4;label = id.node; size = get_size t}) dvl 
   in 
-*)
+ 
 
 |_ -> assert false 
 
