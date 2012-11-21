@@ -13,6 +13,6 @@ int main()
 	k = 1;
 	i = k + 1;
 
-	j.x = i;
+	c.x = i;
  return 0;
 }
