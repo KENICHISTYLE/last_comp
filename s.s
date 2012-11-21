@@ -10,8 +10,6 @@ Expression pas encore faite
 i:
 	.word 0
 main:
-i:
-	.word 0
 j:
 	.space 12
 i:

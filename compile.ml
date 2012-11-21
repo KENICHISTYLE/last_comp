@@ -64,7 +64,8 @@ and  get_union_size list_decl =
         in
 	if !max < taille then max :=taille
       end
-    in
+    in (* pb a regler ne met pas a jour la taille des unions
+*)
     let ()= List.iter comp list_decl in
    ( (!max + 3)/4)*4 
   end
@@ -88,6 +89,7 @@ let rename id =
 
 
 (*
+
 
 let compile_decl d =
 match d with
@@ -142,14 +144,14 @@ let recup_data vd = let ty = fst vd in
 		    |Tpointer cy ->[lab;Daddress id.node]
 
 
-let compile_block prog  block =   
+let compile_block  block =   
   let res = List.map (fun v -> recup_data v ) (fst block) 
   in
   let var =List.concat res
   in
   let stm = List.fold_left (fun acc i -> acc ++ (compile_stmt i)) nop (snd block)
   in
-  {data = prog.data @ var  ; text = prog.text ++ stm }
+  {data = var ; text = stm }
 
 
 
@@ -158,7 +160,7 @@ let compile_data prog = function
 |Dvars dvl -> 
   let res1 = List.map (fun v -> recup_data v ) dvl in
   let res =List.concat res1
-  in {text = prog.text ; data = prog.data@res}
+  in {text = prog.text ; data = res}
 
 | Dstruct (id, decls) as d -> Hashtbl.add struct_env id.node decls;prog
 
@@ -169,7 +171,7 @@ let compile_data prog = function
    in 
    let label = [Dlabel id.node] 
    in
-   let core = compile_block prog infb
+   let core = compile_block infb
    in
    let data = prog.data@label@core.data;
    in
