@@ -126,10 +126,6 @@ match i.node with
   end
 |_ -> inline "Instruction pas encore faite\n"
 
-let compile_block block = 
-  let stm = List.fold_left (fun acc i -> acc ++ (compile_stmt i)) nop (snd block)
-  in stm
-
 
 (* vd signfi variable declaration *)
 let recup_data vd = let ty = fst vd in
@@ -145,10 +141,21 @@ let recup_data vd = let ty = fst vd in
 		    |Tpointer cy ->Daddress id.node
 
 
+let compile_block prog  block =   
+  let var =  List.map (fun v -> recup_data v ) (fst block) 
+  in
+  let stm = List.fold_left (fun acc i -> acc ++ (compile_stmt i)) nop (snd block)
+  in
+  {data = prog.data @ var  ; text = prog.text ++ stm }
+
+
+
+
 let compile_data prog = function
 |Dvars dvl -> 
   let res = List.map (fun v -> recup_data v ) dvl 
-  in {text = prog.text ; data = prog.data}
+  in
+  {text = prog.text  ; data = prog.data@res}
 
 | Dstruct (id, decls) as d -> Hashtbl.add struct_env id.node decls;prog
 
@@ -159,9 +166,15 @@ let compile_data prog = function
    in 
    let label = [Dlabel id.node] 
    in
-   let core = compile_block infb
+   let core = compile_block prog infb
    in
-   {text = prog.text ++ core ; data = prog.data@label}
+   let data = prog.data@label@core.data;
+   in
+   let save = mips [Sw (RA,Areg(0,FP)); Sw (FP,Areg(-4,FP))] 
+   in
+   let code = prog.text ++  core.text ++ save
+   in
+   {text = code ; data = data}
   
 
 
