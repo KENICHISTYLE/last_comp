@@ -11,7 +11,7 @@ let struct_size = Hashtbl.create 1007
 
 let union_size = Hashtbl.create 1007
 
-type data = {allign : int; label : string; size : int} 
+type data = {allign : int; label : label; size : int} 
 
 let data_list = []
 
@@ -99,27 +99,25 @@ match d with
       (fun  (t,id) -> 
         (t,rename id))  dvl
   in Dvars res
-| Dstruct (id, decls) as d -> Hashtbl.add struct_env id.node decls;d
-| Dunion  (id, decls) as d -> Hashtbl.add union_env  id.node decls;d 
-| Dfun (t,id,dvl,infb) as d -> d 
 
+let print data
 
 let recup_data_list = function
 |Dvars dvl -> 
   let res = List.map (fun (t,id) -> {allign = 4;label = id.node; size = get_size t}) dvl 
   in res
+
+| Dstruct (id, decls) as d -> Hashtbl.add struct_env id.node decls;d
+
+| Dunion  (id, decls) as d -> Hashtbl.add union_env  id.node decls;d 
+
 |Dfun (t,id,dvl,infb) -> 
   let args = List.map (fun (t,id) -> {allign = 4;label = id.node; size = get_size t}) dvl 
   in 
-  let total = {allign = 4; label = id.node; size = get_size t}::args
-  in total
-|_ -> assert false
+ 
 
+|_ -> assert false 
 
 
 let compile_file ast = 
-  let _res = List.map compile_decl ast in
-  let () = 
-    size_all_struct struct_env ;
-    print 
-  in  failwith !msg 
+         failwith !msg 
