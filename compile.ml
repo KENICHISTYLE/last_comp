@@ -134,20 +134,22 @@ let compile_block block =
 (* vd signfi variable declaration *)
 let recup_data vd = let ty = fst vd in
 		    let id = snd vd in
+		    let lab = Dlabel id.node in
 		    match ty with 
-		    |Tint ->  Dword [Int32.zero]
-		    |Tchar -> Dbyte 1
+		    |Tint ->[lab;Dword [Int32.zero]]
+		    |Tchar ->[lab;Dbyte 1]
 		    |Tstruct id|Tunion id ->
 		    begin
 		      let taille = get_size ty in
-		      Dspace taille
+		     [lab;Dspace taille]
 		    end
-		    |Tpointer cy ->Daddress id.node
+		    |Tpointer cy ->[lab;Daddress id.node]
 
 
 let compile_data prog = function
 |Dvars dvl -> 
-  let res = List.map (fun v -> recup_data v ) dvl 
+  let res1 = List.map (fun v -> recup_data v ) dvl in
+  let res =List.concat res1
   in {text = prog.text ; data = prog.data}
 
 | Dstruct (id, decls) as d -> Hashtbl.add struct_env id.node decls;prog

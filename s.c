@@ -1,3 +1,5 @@
+int i;
+
 
 struct c {
  int x ;
