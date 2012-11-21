@@ -1,7 +1,7 @@
 
 open Ast
 open Typing
-
+open Mips
 
 let struct_env = Typing.struct_env 
 
@@ -11,7 +11,6 @@ let struct_size = Hashtbl.create 1007
 
 let union_size = Hashtbl.create 1007
 
-type data = {allign : int; label : label; size : int} 
 
 let data_list = []
 
@@ -89,7 +88,7 @@ let rename id =
 
 
 
-
+(*
 
 let compile_decl d =
 match d with
@@ -100,24 +99,60 @@ match d with
         (t,rename id))  dvl
   in Dvars res
 
-let print data
+*)
+let prog = {text = nop; data = [] }
 
-let recup_data_list = function
-|Dvars dvl -> 
-  let res = List.map (fun (t,id) -> {allign = 4;label = id.node; size = get_size t}) dvl 
-  in res
-
-| Dstruct (id, decls) as d -> Hashtbl.add struct_env id.node decls;d
-
-| Dunion  (id, decls) as d -> Hashtbl.add union_env  id.node decls;d 
-
-|Dfun (t,id,dvl,infb) -> 
-  let args = List.map (fun (t,id) -> {allign = 4;label = id.node; size = get_size t}) dvl 
-  in 
+let compile_expr e =
+match e.node with
+|Econst c -> 
+  begin
+    match c with
+    |Cint i -> inline (Int32.to_string i)
+    |Cstring s -> inline s
+  end
+|_ -> inline "Expression pas encore faite\n "
  
+let compile_stmt i =
+match i.node with
+|Sskip -> nop
+|Sexpr e -> compile_expr e
+|Sreturn r ->
+  begin
+    match r with
+    | Some s -> inline " return qlq chose\n "
+    | None -> inline " ne retourne rien\n"
+  end
+|_ -> inline "Instruction pas encore faite\n"
 
-|_ -> assert false 
+let compile_block block = 
+  let stm = List.fold_left (fun acc i -> acc ++ (compile_stmt i)) nop (snd block)
+  in stm
+
+let recup_data_list prog = function
+|Dvars dvl -> 
+  let res = List.map (fun (t,id) -> [Dalign 4; Dlabel id.node; Dbyte (get_size t)]) dvl 
+  in {text = prog.text ; data = prog.data}
+
+| Dstruct (id, decls) as d -> Hashtbl.add struct_env id.node decls;prog
+
+| Dunion  (id, decls) as d -> Hashtbl.add union_env  id.node decls;prog 
+
+| Dfun (t,id,dvl,infb) -> 
+   let args = List.map (fun (t,id) -> [Dalign 4; Dlabel id.node; Dbyte (get_size t)] ) dvl 
+   in 
+   let label = [Dlabel id.node] 
+   in
+   let core = compile_block infb
+   in
+   {text = prog.text ++ core ; data = prog.data@label}
+  
+
 
 
 let compile_file ast = 
-         failwith !msg 
+  try
+    let sortie =List.fold_left (fun acc d -> recup_data_list acc d) prog  ast 
+    in 
+    sortie
+  with _ ->
+    failwith !msg 
