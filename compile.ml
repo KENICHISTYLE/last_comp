@@ -31,10 +31,7 @@ let rec get_struct_size s =
         match t with
         |Tchar -> acc+1
         |Tint | Tpointer _ -> 
-          if ((acc mod 4) = 0) then
-            (acc+4) 
-          else 
-            ((acc+(acc mod 4)) + 4)
+          ((acc+(acc mod 4)) + 4)
         |Tstruct sid ->
           try_or_use sid.node get_struct_size struct_size struct_env 
         |Tunion uid ->
@@ -59,13 +56,11 @@ and  get_union_size list_decl =
     let max = ref 0 in
     let comp (t,id) =
       begin
-	let taille = get_size t
-      
+	let taille = get_size t      
         in
 	if !max < taille then max :=taille
       end
-    in (* pb a regler ne met pas a jour la taille des unions
-*)
+    in (* pb a regler ne met pas a jour la taille des unions *)
     let ()= List.iter comp list_decl in
    ( (!max + 3)/4)*4 
   end
@@ -106,27 +101,47 @@ match d with
 
 let prog = {text = nop; data = [] }
 
-let compile_expr e =
+let compile_gauche e =
+match e.node with
+|Eident id -> [Inline (id.node^" <= ")]
+|_ -> [Inline ("VG"^" <= ")]
+
+let rec compile_expr e =
 match e.node with
 |Econst c -> 
   begin
     match c with
-    |Cint i -> inline (Int32.to_string i)
-    |Cstring s -> inline s
+    |Cint i -> [Inline (Int32.to_string i)]
+    |Cstring s ->[Inline ("\""^s^"\"")]
   end
-|_ -> inline "Expression pas encore faite\n "
+|Eassign (e1,e2) ->
+  let r2 = compile_expr e2
+  in
+  let r1 = compile_gauche e1
+  in
+  r1@r2
+|Eunop (op,expr) ->
+  begin
+    match op with
+      |Upre_inc 
+      |Upost_inc
+      |Upre_dec
+      |Upost_dec
+      |_ -> [Inline " \n operateur unaire pas encore gere \n "]
+  end
+|_ ->[ Inline "Expression pas encore faite\n "]
  
 let compile_stmt i =
 match i.node with
-|Sskip -> nop
-|Sexpr e -> compile_expr e
+|Sskip -> []
+|Sexpr e ->compile_expr e
 |Sreturn r ->
   begin
     match r with
-    | Some s -> inline " return qlq chose\n "
-    | None -> inline " ne retourne rien\n"
+    | Some s -> [Inline " return qlq chose\n "]
+    | None -> [Inline " ne retourne rien\n"]
   end
-|_ -> inline "Instruction pas encore faite\n"
+|_ -> [Inline "Instruction pas encore faite\n"]
 
 
 (* vd signfi variable declaration *)
@@ -149,9 +164,9 @@ let compile_block  block =
   in
   let var =List.concat res
   in
-  let stm = List.fold_left (fun acc i -> acc ++ (compile_stmt i)) nop (snd block)
+  let stm = List.fold_left (fun acc i -> acc ++(mips (compile_stmt i))) nop (snd block)
   in
-  {data = var ; text = stm }
+   stm 
 
 
 
@@ -169,15 +184,15 @@ let compile_data prog = function
 | Dfun (t,id,dvl,infb) -> 
    let args = List.map (fun v -> recup_data v) dvl 
    in 
-   let label = [Dlabel id.node] 
+   let label = mips [Label id.node] 
    in
    let core = compile_block infb
    in
-   let data = prog.data@label@core.data;
+   let data = prog.data;
    in
-   let save = mips [Sw (RA,Areg(0,FP)); Sw (FP,Areg(-4,FP))] 
+   let save = mips [Sw (RA,Areg(0,FP)); Sw (FP,Areg(-4,FP)); Binop (Add,SP,FP,Oimm(-8))] 
    in
-   let code = prog.text ++  core.text ++ save
+   let code = prog.text ++ label ++ save ++  core
    in
    {text = code ; data = data}
   
