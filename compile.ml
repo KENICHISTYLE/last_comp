@@ -17,6 +17,7 @@ type funt = {retour : c_type ; dvl : var_decl list  }
 
 let globfun = Hashtbl.create 107
 
+let (genv : (string ,unit) Hashtbl.t) = Hashtbl.create 1007
 
 let data_list = []
 
@@ -112,14 +113,20 @@ let compile_gauche env e =
 match e.node with
 |Eident id -> [Inline (id.node^" <= ")]
 |_ -> [Inline ("VG"^" <= ")]
+let push = Binop(Sub,SP,SP,Oimm 4)
+let pop = Binop(Add,SP,SP,Oimm 4)
+exception Haha
+
 
 let rec compile_expr env e =
 match e.node with
+|Enull ->[]
+
 |Econst c -> 
   begin
     match c with
-    |Cint i -> [Inline (Int32.to_string i)]
-    |Cstring s ->[Inline ("\""^s^"\"")]
+    |Cint i -> [push;Li(A0,Int32.to_int i);Sw(A0,Areg(0,SP))]
+    |Cstring s ->[Inline (s)]
   end
 |Eassign (e1,e2) ->
   let r2 = compile_expr env e2
@@ -127,6 +134,42 @@ match e.node with
   let r1 = compile_gauche  env e1
   in
   r1@r2
+|Esizeof x ->
+        begin   
+        let taille = get_size x in
+        [push;Li(A0,taille);Sw(A0,Areg(0,SP))]
+        end
+|Eident x ->
+        begin
+        try
+        let fp = StrMap.find x.node env in
+        [push;Lw(A0,Areg(-fp,FP));Sw(A0,Areg(0,SP))]
+        with Not_found ->
+        if not (Hashtbl.mem genv x.node) then raise Haha;
+        [push;Lw(A0,Alab x.node);Sw(A0,Areg(0,SP))]
+        end
+|Ebinop (op,e1,e2) ->
+begin
+let operation = match op with
+|Badd ->Mips.Add
+|Bsub ->Mips.Sub
+|Bmul ->Mips.Mul
+|Bdiv ->Mips.Div
+|Beq ->Mips.Eq
+|Bneq ->Mips.Ne
+|Blt ->Mips.Lt
+|Ble ->Mips.Le
+|Bgt ->Mips.Gt
+|Bge ->Mips.Ge
+|Bmod -> Mips.Rem
+|Band ->Mips.And
+|Bor ->Mips.Or
+|_ -> assert false in
+let code_e1 = compile_expr env e1 in
+let code_e2 = compile_expr env e2 in
+code_e1 @ code_e2 
+end
+
 |Eunop (op,expr) ->
   begin
     match op with
@@ -134,10 +177,12 @@ match e.node with
       |Upost_inc
       |Upre_dec
       |Upost_dec
-      |_ -> [Inline " \n operateur unaire pas encore gere \n "]
+      
+      |_ -> [Inline "op un "]
   end
-|_ ->[ Inline "Expression pas encore faite\n "]
+|_ ->[ Inline "Expression"]
  
+
 let cont_br = ref 0
 let loop_count = ref 0
 
@@ -146,6 +191,7 @@ let get_nb_br nc =
   string_of_int !nc
 
 let rec compile_stmt env i =
+
 match i.node with
 |Sskip -> []
 |Sexpr e -> compile_expr env e
@@ -217,7 +263,6 @@ match i.node with
       [Lw(RA,Areg(-4,FP));Binop(Sub,SP,SP,Oimm (0));Jr RA]
   (* a mettre la taille de la frame*)
   end
-
 
 
 (* vd signfi variable declaration *)

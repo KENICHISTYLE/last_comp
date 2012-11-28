@@ -6,7 +6,6 @@ type ('info, 'node) node = { loc : 'info;
 type loc = Lexing.position * Lexing.position
 
 type ident = (loc, string) node
-
 type c_type =
   | Tnull (* pour typer null *)
   | Tvoid
