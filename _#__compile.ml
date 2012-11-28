@@ -11,10 +11,6 @@ let struct_size = Hashtbl.create 1007
 
 let union_size = Hashtbl.create 1007
 
-(*let genv = Hashtbl.create 1007 *)
-
-let (genv : (string ,unit) Hashtbl.t) = Hashtbl.create 1007
-
 let data_list = []
 
 let try_or_use id f t_size t_env = 
@@ -35,7 +31,10 @@ let rec get_struct_size s =
         match t with
         |Tchar -> acc+1
         |Tint | Tpointer _ -> 
-          ((acc+(acc mod 4)) + 4)
+          if ((acc mod 4) = 0) then
+            (acc+4) 
+          else 
+            ((acc+(acc mod 4)) + 4)
         |Tstruct sid ->
           try_or_use sid.node get_struct_size struct_size struct_env 
         |Tunion uid ->
@@ -60,11 +59,12 @@ and  get_union_size list_decl =
     let max = ref 0 in
     let comp (t,id) =
       begin
-	let taille = get_size t      
+	let taille = get_size t
+      
         in
 	if !max < taille then max :=taille
       end
-    in (* pb a regler ne met pas a jour la taille des unions *)
+    in
     let ()= List.iter comp list_decl in
    ( (!max + 3)/4)*4 
   end
@@ -89,7 +89,6 @@ let rename id =
 
 (*
 
-
 let compile_decl d =
 match d with
 | Dvars dvl ->
@@ -105,94 +104,29 @@ match d with
 
 let prog = {text = nop; data = [] }
 
-let compile_gauche e =
+let compile_expr e =
 match e.node with
-|Eident id -> [Inline (id.node^" <= ")]
-|_ -> [Inline ("VG"^" <= ")]
-let push = Binop(Sub,SP,SP,Oimm 4)
-let pop = Binop(Add,SP,SP,Oimm 4)
-exception Haha
-
-module StrMap = Map.Make(String)
-
-let rec compile_expr env e =
-match e.node with
-|Enull ->[]
-
 |Econst c -> 
   begin
     match c with
-    |Cint i -> [push;Li(A0,Int32.to_int i);Sw(A0,Areg(0,SP))]
-    |Cstring s ->[Inline ("\""^s^"\"")]
+    |Cint i -> inline (Int32.to_string i)
+    |Cstring s -> inline s
   end
-|Eassign (e1,e2) ->
-  let r2 = compile_expr env e2
-  in
-  let r1 = compile_gauche e1
-  in
-  r1@r2
-|Esizeof x ->
-        begin   
-        let taille = get_size x in
-        [push;Li(A0,taille);Sw(A0,Areg(0,SP))]
-        end
-|Eident x ->
-        begin
-        try
-        let fp = StrMap.find x.node env in
-        [push;Lw(A0,Areg(-fp,FP));Sw(A0,Areg(0,SP))]
-        with Not_found ->
-        if not (Hashtbl.mem genv x.node) then raise Haha;
-        [push;Lw(A0,Alab x.node);Sw(A0,Areg(0,SP))]
-        end
-|Ebinop (op,e1,e2) ->
-begin
-let operation = match op with
-|Badd ->Mips.Add
-|Bsub ->Mips.Sub
-|Bmul ->Mips.Mul
-|Bdiv ->Mips.Div
-|Beq ->Mips.Eq
-|Bneq ->Mips.Ne
-|Blt ->Mips.Lt
-|Ble ->Mips.Le
-|Bgt ->Mips.Gt
-|Bge ->Mips.Ge
-|Bmod -> Mips.Rem
-|Band ->Mips.And
-|Bor ->Mips.Or
-|_ -> assert false in
-let code_e1 = compile_expr env e1 in
-let code_e2 = compile_expr env e2 in
-code_e1 @ code_e2 
-end
-
-|Eunop (op,expr) ->
-  begin
-    match op with
-      |Upre_inc 
-      |Upost_inc
-      |Upre_dec
-      |Upost_dec
-      
-      |_ -> [Inline " \n operateur unaire pas encore gere \n "]
-  end
-|_ ->[ Inline "Expression pas encore faite\n "]
+|_ -> inline "Expression pas encore faite\n "
  
-let compile_stmt i = assert false
-(*
+let compile_stmt i =
 match i.node with
-|Sskip -> []
-|Sexpr e ->compile_expr e
+|Sskip -> nop
+|Sexpr e -> compile_expr e
 |Sreturn r ->
   begin
     match r with
-    | Some s -> [Inline " return qlq chose\n "]
-    | None -> [Inline " ne retourne rien\n"]
+    | Some s -> inline " return qlq chose\n "
+    | None -> inline " ne retourne rien\n"
   end
-|_ -> [Inline "Instruction pas encore faite\n"]
+|_ -> inline "Instruction pas encore faite\n"
 
-*)
+
 (* vd signfi variable declaration *)
 let recup_data vd = let ty = fst vd in
 		    let id = snd vd in
@@ -208,14 +142,14 @@ let recup_data vd = let ty = fst vd in
 		    |Tpointer cy ->[lab;Daddress id.node]
 
 
-let compile_block  block =   
+let compile_block prog  block =   
   let res = List.map (fun v -> recup_data v ) (fst block) 
   in
   let var =List.concat res
   in
-  let stm = List.fold_left (fun acc i -> acc ++(mips (compile_stmt i))) nop (snd block)
+  let stm = List.fold_left (fun acc i -> acc ++ (compile_stmt i)) nop (snd block)
   in
-   stm 
+  {data = prog.data @ var  ; text = prog.text ++ stm }
 
 
 
@@ -224,7 +158,7 @@ let compile_data prog = function
 |Dvars dvl -> 
   let res1 = List.map (fun v -> recup_data v ) dvl in
   let res =List.concat res1
-  in {text = prog.text ; data = res}
+  in {text = prog.text ; data = prog.data@res}
 
 | Dstruct (id, decls) as d -> Hashtbl.add struct_env id.node decls;prog
 
@@ -233,24 +167,32 @@ let compile_data prog = function
 | Dfun (t,id,dvl,infb) -> 
    let args = List.map (fun v -> recup_data v) dvl 
    in 
-   let label = mips [Label id.node] 
+   let label = [Dlabel id.node] 
    in
-   let core = compile_block infb
+   let core = compile_block prog infb
    in
-   let data = prog.data;
+   let data = prog.data@label@core.data;
    in
-   let save = mips [Sw (RA,Areg(0,FP)); Sw (FP,Areg(-4,FP)); Binop (Add,SP,FP,Oimm(-8))] 
+   let save = mips [Sw (RA,Areg(0,FP)); Sw (FP,Areg(-4,FP))] 
    in
-   let code = prog.text ++ label ++ save ++  core
+   let code = prog.text ++  core.text ++ save
    in
    {text = code ; data = data}
   
+let generer_expr env ex = match ex.node with
+ | Enull 
+ | Econst of constant
+ | Eident of ident
+ | Esizeof of c_type
+ | Edot of  'info expr * ident
+ | Eassign of 'info expr * 'info expr
+ | Eunop of unop * 'info expr
+ | Ebinop of binop * 'info expr * 'info expr
+ | Ecall of ident * 'info expr list
 
 
 let compile_file ast = 
-  try
+ 
     let sortie =List.fold_left (fun acc d -> compile_data acc d) prog  ast 
     in 
     sortie
-  with _ ->
-    failwith !msg 
