@@ -11,7 +11,11 @@ let struct_size = Hashtbl.create 1007
 
 let union_size = Hashtbl.create 1007
 
-(*let genv = Hashtbl.create 1007 *)
+module StrMap = Map.Make(String)
+
+type funt = {retour : c_type ; dvl : var_decl list  }
+
+let globfun = Hashtbl.create 107
 
 let (genv : (string ,unit) Hashtbl.t) = Hashtbl.create 1007
 
@@ -105,7 +109,7 @@ match d with
 
 let prog = {text = nop; data = [] }
 
-let compile_gauche e =
+let compile_gauche env e =
 match e.node with
 |Eident id -> [Inline (id.node^" <= ")]
 |_ -> [Inline ("VG"^" <= ")]
@@ -113,7 +117,6 @@ let push = Binop(Sub,SP,SP,Oimm 4)
 let pop = Binop(Add,SP,SP,Oimm 4)
 exception Haha
 
-module StrMap = Map.Make(String)
 
 let rec compile_expr env e =
 match e.node with
@@ -123,12 +126,13 @@ match e.node with
   begin
     match c with
     |Cint i -> [push;Li(A0,Int32.to_int i);Sw(A0,Areg(0,SP))]
-    |Cstring s ->[Inline ("\""^s^"\"")]
+    |Cstring s ->[Inline (s)]
+
   end
 |Eassign (e1,e2) ->
   let r2 = compile_expr env e2
   in
-  let r1 = compile_gauche e1
+  let r1 = compile_gauche  env e1
   in
   r1@r2
 |Esizeof x ->
@@ -173,26 +177,95 @@ end
       |Upre_inc 
       |Upost_inc
       |Upre_dec
-      |Upost_dec
-      
-      |_ -> [Inline " \n operateur unaire pas encore gere \n "]
+      |Upost_dec   
+
+      |_ -> [Inline "op un "]
+
   end
-|_ ->[ Inline "Expression pas encore faite\n "]
+|_ ->[ Inline "Expression"]
  
-let compile_stmt i = assert false
-(*
+
+let cont_br = ref 0
+let loop_count = ref 0
+
+let get_nb_br nc =
+  let () = incr nc in
+  string_of_int !nc
+
+let rec compile_stmt env i =
 match i.node with
 |Sskip -> []
-|Sexpr e ->compile_expr e
+|Sexpr e -> compile_expr env e
+|Sif (e,s1,s2) ->
+  let res = compile_expr env e 
+  in
+  let n = (get_nb_br cont_br)
+  in
+  let label1 = "True_branch_"^n
+  in
+  let label2 = "False_branch_"^n
+  in
+  let s1 = compile_stmt env s1
+  in
+  let s2 = compile_stmt env s2
+  in
+  res@Bnez (A0,label1)::s2@ ( B label2::Label (label1)::s1@ [Label label2])
+
+|Swhile (e,s) ->
+  let res = compile_expr env  e
+  in
+  let n = (get_nb_br loop_count)
+  in
+  let label1 = "loop_start_"^n
+  in
+  let label2 = "loop_end_"^n
+  in
+  let s = compile_stmt env s
+  in
+  Label label1::res@ (Beqz (A0,label2)::s@[B label1;Label label2])
+  
+|Sfor (stl1,e,stl2,s) ->
+  let stmt1 = List.concat (List.map (compile_stmt env) stl1)
+  in
+  let stmt2 = List.concat (List.map (compile_stmt env) stl2)
+  in
+  let n = (get_nb_br loop_count)
+  in
+  let label1 = "loop_start_"^n
+  in
+  let label2 = "loop_end_"^n
+  in
+  let res = compile_expr env e
+  in
+  let core = compile_stmt env s
+  in
+  stmt1@ (Label label1::res@ (Beqz (A0,label2) ::core@stmt2@[B label1;Label label2]))
+
+|Sblock  block ->
+  let changer = ref 0
+  in 
+  let env = List.fold_left 
+    (fun env (t,id) -> 
+      let s = (get_size t) in 
+      changer := s + !changer ;
+      StrMap.add id.node  (!changer) env) env (fst block) 
+  in
+  let stm = List.map (compile_stmt env) (snd block)
+  in
+  List.concat stm 
+
 |Sreturn r ->
   begin
     match r with
-    | Some s -> [Inline " return qlq chose\n "]
-    | None -> [Inline " ne retourne rien\n"]
+    | Some s -> 
+      [Move (A0,V0);Lw(RA,Areg(-4,FP));Binop(Sub,SP,SP,Oimm (0));Jr RA] 
+    (* a mettre la taille de la frame*)
+    | None -> 
+      [Lw(RA,Areg(-4,FP));Binop(Sub,SP,SP,Oimm (0));Jr RA]
+  (* a mettre la taille de la frame*)
   end
-|_ -> [Inline "Instruction pas encore faite\n"]
 
-*)
+
 (* vd signfi variable declaration *)
 let recup_data vd = let ty = fst vd in
 		    let id = snd vd in
@@ -208,14 +281,19 @@ let recup_data vd = let ty = fst vd in
 		    |Tpointer cy ->[lab;Daddress id.node]
 
 
-let compile_block  block =   
-  let res = List.map (fun v -> recup_data v ) (fst block) 
+let compile_block env  block = 
+  let frame = ref 0
+  in   
+  let env = List.fold_left 
+    (fun env (t,id) -> 
+      let s = (get_size t) in      
+      let env = StrMap.add id.node  (!frame) env 
+      in
+      frame := s + !frame; env ) env (fst block) 
   in
-  let var =List.concat res
+  let stm = List.fold_left (fun acc i -> acc ++(mips (compile_stmt env i))) nop (snd block)
   in
-  let stm = List.fold_left (fun acc i -> acc ++(mips (compile_stmt i))) nop (snd block)
-  in
-   stm 
+   stm,!frame 
 
 
 
@@ -226,24 +304,27 @@ let compile_data prog = function
   let res =List.concat res1
   in {text = prog.text ; data = res}
 
-| Dstruct (id, decls) as d -> Hashtbl.add struct_env id.node decls;prog
+| Dstruct (id, decls)  -> Hashtbl.add struct_env id.node decls;prog
 
-| Dunion  (id, decls) as d -> Hashtbl.add union_env  id.node decls;prog 
+| Dunion  (id, decls)  -> Hashtbl.add union_env  id.node decls;prog 
 
 | Dfun (t,id,dvl,infb) -> 
-   let args = List.map (fun v -> recup_data v) dvl 
-   in 
-   let label = mips [Label id.node] 
-   in
-   let core = compile_block infb
-   in
-   let data = prog.data;
-   in
-   let save = mips [Sw (RA,Areg(0,FP)); Sw (FP,Areg(-4,FP)); Binop (Add,SP,FP,Oimm(-8))] 
-   in
-   let code = prog.text ++ label ++ save ++  core
-   in
-   {text = code ; data = data}
+  let () =
+    Hashtbl.add globfun id.node {retour = t; dvl = dvl} 
+  in
+  let label = mips [Label id.node] 
+  in
+  let core,tframe = compile_block StrMap.empty infb
+  in
+  let data = prog.data;
+  in
+  let frame = mips [Binop (Sub,SP,SP,Oimm tframe)]
+  in
+  let save = mips [Sw (FP,Areg((4-tframe),SP)); Binop (Add,FP,FP,Oimm(-4)); Sw (RA,Areg(-4,FP));] 
+  in
+  let code = prog.text ++ label ++ frame ++ save ++ core
+  in
+  {text = code ; data = data}
   
 
 
