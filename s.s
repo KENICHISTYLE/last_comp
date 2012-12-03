@@ -4,7 +4,7 @@ f:
 	sw   $fp, 4($sp)
 	add  $fp, $sp, 8
 	sw   $ra, 0($fp)
-	lw   $ra, 4($fp)
+	lw   $ra, 0($fp)
 	sub  $sp, $sp, 0
 	jr   $ra
 main:
@@ -16,7 +16,7 @@ main:
 	li   $a0, 1
 	sw   $a0, 0($sp)
 	sub  $sp, $sp, 4
-	lw   $a0, -16($fp)
+	lw   $a0, -4($fp)
 	sw   $a0, 0($sp)
 	sub  $sp, $sp, 4
 	li   $a0, 1
@@ -39,19 +39,21 @@ loop_start_1:
 	b    loop_start_1
 loop_end_1:
 	sub  $sp, $sp, 4
-	lw   $a0, -12($fp)
+	lw   $a0, -8($fp)
 	sw   $a0, 0($sp)
 loop_start_2:
 	beqz $a0, loop_end_2
 	b    loop_start_2
 loop_end_2:
 	sub  $sp, $sp, 4
-	lw   $a0, -12($fp)
+	lw   $a0, -8($fp)
 	sw   $a0, 0($sp)
-	move $a0, $v0
-	lw   $ra, 4($fp)
+	move $v0, $a0
+	lw   $ra, 0($fp)
 	sub  $sp, $sp, 0
-	jr   $ra
+	move $t1, $v0
+	li   $v0, 10
+	syscall
 putchar:
 	sub  $sp, $sp, 8
 	sw   $fp, -4($sp)
@@ -65,6 +67,6 @@ putchar:
 	jr   $ra
 sbrk:
 	.data
-i:
+i1:
 	.word 0
 
