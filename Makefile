@@ -4,7 +4,7 @@
 # a.ml, a.ml doit se trouver avant dans la liste.
 #
 
-SOURCES = ast.mli parser.mly lexer.mll typing.mli typing.ml \
+SOURCES = ast.mli parser.mly lexer.mll typing.mli typing.ml renamer.mli renamer.ml \
 mips.mli mips.ml compile.ml main.ml
 
 # Nom du binaire

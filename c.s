@@ -1,9 +1,39 @@
 	.text
 main:
-	sub  $sp, $sp, 8
-	sw   $fp, 4($sp)
-	add  $fp, $sp, 8
+	sub  $sp, $sp, 12
+	sw   $fp, 0($sp)
+	add  $fp, $sp, 4
 	sw   $ra, 0($fp)
+	add  $sp, $sp, 0
+	sub  $sp, $sp, 4
+	li   $a0, 114
+	sw   $a0, 0($sp)
+	jal  putchar
+	add  $sp, $sp, 4
+	add  $sp, $sp, 0
+	sub  $sp, $sp, 4
+	li   $a0, 49
+	sw   $a0, 0($sp)
+	jal  putchar
+	add  $sp, $sp, 4
+	add  $sp, $sp, 0
+	sub  $sp, $sp, 4
+	li   $a0, 50
+	sw   $a0, 0($sp)
+	jal  putchar
+	add  $sp, $sp, 4
+	add  $sp, $sp, 0
+	sub  $sp, $sp, 4
+	li   $a0, 51
+	sw   $a0, 0($sp)
+	jal  putchar
+	add  $sp, $sp, 4
+	add  $sp, $sp, 0
+	sub  $sp, $sp, 4
+	li   $a0, 52
+	sw   $a0, 0($sp)
+	jal  putchar
+	add  $sp, $sp, 4
 	sub  $sp, $sp, 4
 	li   $a0, 1
 	sw   $a0, 0($sp)
@@ -16,7 +46,7 @@ main:
 putchar:
 	sub  $sp, $sp, 8
 	sw   $fp, -4($sp)
-	add  $fp, $sp, -8
+	add  $fp, $sp, 0
 	sw   $ra, 0($fp)
 	li   $v0, 11
 	lbu   $a0, 8($fp)
@@ -26,6 +56,6 @@ putchar:
 	jr   $ra
 sbrk:
 	.data
-c:
-	.byte 1
+c_1:
+	.byte 0
 

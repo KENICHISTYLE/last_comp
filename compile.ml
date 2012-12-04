@@ -213,7 +213,7 @@ end
   let reserver_taille_retour = [Binop(Add,SP,SP,Oimm(-taille_retour))] in
   let list_list = List.map (compile_expr env) iel 
   in
-  let passer_arg =[](* List.concat list_list*)
+  let passer_arg = List.concat list_list
   in
   let sauvegarder = [] 
   in
@@ -317,7 +317,7 @@ let recup_data vd = let ty = fst vd in
                       in
 		    match ty with 
 		    |Tint ->[lab;Dword [Int32.zero]]
-		    |Tchar ->[lab;Dbyte 1]
+		    |Tchar ->[lab;Dbyte 0]
 		    |Tstruct id|Tunion id ->
 		    begin
 		      let taille = get_size ty in
@@ -344,7 +344,7 @@ let predfun =
   let putchar =
     let frame = Binop (Sub,SP,SP,Oimm 8)
     in
-    let save =  [Sw (FP,Areg((-4),SP)); Binop (Add,FP,SP,Oimm(-8)); Sw (RA,Areg(0,FP));] 
+    let save =  [Sw (FP,Areg((-4),SP)); Binop (Add,FP,SP,Oimm(0)); Sw (RA,Areg(0,FP));] 
     in
     let label = Label "putchar"
     in
@@ -378,7 +378,7 @@ let compile_data prog = function
   in
   let frame = mips [Binop (Sub,SP,SP,Oimm (tframe+8))]
   in
-  let save = mips [Sw (FP,Areg((4-tframe),SP)); Binop (Add,FP,SP,Oimm(8-tframe)); Sw (RA,Areg(0,FP));] 
+  let save = mips [Sw (FP,Areg((4-tframe),SP)); Binop (Add,FP,SP,Oimm(tframe)); Sw (RA,Areg(0,FP));] 
   in
   let code = prog.text ++ label ++ frame ++ save ++ core
   in
