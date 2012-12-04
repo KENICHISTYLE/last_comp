@@ -108,33 +108,45 @@ match d with
 
 
 let prog = {text = nop; data = [] }
-
-let compile_gauche env e =
-match e.node with
-|Eident id -> [Inline (id.node^" <= ")]
-|_ -> [Inline ("VG"^" <= ")]
 let push = Binop(Sub,SP,SP,Oimm 4)
 let pop = Binop(Add,SP,SP,Oimm 4)
+let compile_gauche env e =
+match e.node with
+|Eident id ->
+  begin
+    let fp = StrMap.find id.node env in
+    [push;Binop(Add,A0,FP,Oimm(-fp));Sw(A0,Areg(0,SP))]
+  end
+|_ -> []
+
+
+(*let push_r r t = push ::[Sw(r,t)]*) 
 exception Haha
 
 
 let rec compile_expr env e =
 match e.node with
 |Enull ->[]
-
 |Econst c -> 
   begin
     match c with
     |Cint i -> [push;Li(A0,Int32.to_int i);Sw(A0,Areg(0,SP))]
-    |Cstring s ->[Inline (s)]
-
+    |Cstring s ->[push;La(A0,s);Sw(A0,Areg(0,SP))]
   end
 |Eassign (e1,e2) ->
+begin
   let r2 = compile_expr env e2
   in
-  let r1 = compile_gauche  env e1
+  let r1 = compile_gauche env e1
   in
-  r1@r2
+  r1@r2@
+    [Lw(A0,Areg(4,SP));
+     Lw(A1,Areg(0,SP));
+     pop;
+     Sw(A1,Areg(0,A0));
+     Sw(A1,Areg(0,SP))
+    ]
+end
 |Esizeof x ->
         begin   
         let taille = get_size x in
@@ -150,39 +162,68 @@ match e.node with
         [push;Lw(A0,Alab x.node);Sw(A0,Areg(0,SP))]
         end
 |Ebinop (op,e1,e2) ->
-begin
-let operation = match op with
-|Badd ->Mips.Add
-|Bsub ->Mips.Sub
-|Bmul ->Mips.Mul
-|Bdiv ->Mips.Div
-|Beq ->Mips.Eq
-|Bneq ->Mips.Ne
-|Blt ->Mips.Lt
-|Ble ->Mips.Le
-|Bgt ->Mips.Gt
-|Bge ->Mips.Ge
-|Bmod -> Mips.Rem
-|Band ->Mips.And
-|Bor ->Mips.Or
-|_ -> assert false in
-let code_e1 = compile_expr env e1 in
-let code_e2 = compile_expr env e2 in
-code_e1 @ code_e2 
-end
-
-|Eunop (op,expr) ->
   begin
-    match op with
-      |Upre_inc 
-      |Upost_inc
-      |Upre_dec
-      |Upost_dec   
-
-      |_ -> [Inline "op un "]
-
+    let operation = match op with
+      |Badd -> Mips.Add
+      |Bsub -> Mips.Sub
+      |Bmul -> Mips.Mul
+      |Bdiv -> Mips.Div
+      |Beq  -> Mips.Eq
+      |Bneq -> Mips.Ne
+      |Blt  -> Mips.Lt
+      |Ble  -> Mips.Le
+      |Bgt  -> Mips.Gt
+      |Bge  -> Mips.Ge
+      |Bmod -> Mips.Rem
+      |Band -> Mips.And
+      |Bor  -> Mips.Or
+      |_ -> assert false
+    in
+    let code_e1 = compile_expr env e1 in
+    let code_e2 = compile_expr env e2 in
+   code_e1 @ code_e2 @ 
+      [Lw(A0,Areg(4,SP));
+       Lw(A1,Areg(0,SP));
+       pop;
+       Binop(operation,A0,A0,Oreg A1);
+       Sw(A0,Areg(0,SP));
+      ]
+   
   end
+|Eunop (op,expr) ->
+  let com_expr = compile_expr env expr in
+  let com_expr_gauche = compile_gauche env expr in
+  let changer = match op with
+    |Upre_inc 
+    |Upost_inc
+    |Upre_dec
+    |Upost_dec   	
+    |_ -> [Inline "op un "] 
+  in
+    com_expr_gauche@com_expr @changer
+|Edot(ex,id) ->
+  begin
+    let com_gauche = compile_gauche env ex
+    in 
+    []
+  end 
+|Ecall(id,iel) ->
+  let taille_retour = get_size e.loc in
+  let taille =List.fold_left (fun acc x->(get_size x.loc)+acc) 0 iel in
+  let reserver_taille_retour = [Binop(Add,SP,SP,Oimm(-taille_retour))] in
+  let list_list = List.map (compile_expr env) iel 
+  in
+  let passer_arg =[](* List.concat list_list*)
+  in
+  let sauvegarder = [] 
+  in
+  let appler = [Jal(id.node)]
+  in
+  let apres_appel = [Binop(Add,SP,SP,Oimm(taille))] 
+  in
+  reserver_taille_retour@passer_arg @ sauvegarder @ appler @ apres_appel
 |_ ->[ Inline "Expression"]
+
  
 
 let cont_br = ref 0
@@ -258,10 +299,12 @@ match i.node with
   begin
     match r with
     | Some s -> 
-      [Move (A0,V0);Lw(RA,Areg(-4,FP));Binop(Sub,SP,SP,Oimm (0));Jr RA] 
+      let e = compile_expr env s 
+      in
+      e@[Move (V0,A0);Lw(RA,Areg(0,FP));Binop(Sub,SP,SP,Oimm (0))] 
     (* a mettre la taille de la frame*)
     | None -> 
-      [Lw(RA,Areg(-4,FP));Binop(Sub,SP,SP,Oimm (0));Jr RA]
+      [Lw(RA,Areg(0,FP));Binop(Sub,SP,SP,Oimm (0))]
   (* a mettre la taille de la frame*)
   end
 
@@ -270,6 +313,8 @@ match i.node with
 let recup_data vd = let ty = fst vd in
 		    let id = snd vd in
 		    let lab = Dlabel id.node in
+                    let () = Hashtbl.add genv id.node ()
+                      in
 		    match ty with 
 		    |Tint ->[lab;Dword [Int32.zero]]
 		    |Tchar ->[lab;Dbyte 1]
@@ -295,7 +340,20 @@ let compile_block env  block =
   in
    stm,!frame 
 
-
+let predfun = 
+  let putchar =
+    let frame = Binop (Sub,SP,SP,Oimm 8)
+    in
+    let save =  [Sw (FP,Areg((-4),SP)); Binop (Add,FP,SP,Oimm(-8)); Sw (RA,Areg(0,FP));] 
+    in
+    let label = Label "putchar"
+    in
+    label::frame::save @
+      [Li (V0,11) ; Lbu (A0, Areg(8,FP));Syscall;Lw(RA,Areg(0,FP));Binop(Sub,SP,SP,Oimm (8));Jr RA ]
+  in
+  let sbrk = [ Label "sbrk" ]
+  in
+  mips (putchar @ sbrk)
 
 
 let compile_data prog = function
@@ -318,13 +376,18 @@ let compile_data prog = function
   in
   let data = prog.data;
   in
-  let frame = mips [Binop (Sub,SP,SP,Oimm tframe)]
+  let frame = mips [Binop (Sub,SP,SP,Oimm (tframe+8))]
   in
-  let save = mips [Sw (FP,Areg((4-tframe),SP)); Binop (Add,FP,FP,Oimm(-4)); Sw (RA,Areg(-4,FP));] 
+  let save = mips [Sw (FP,Areg((4-tframe),SP)); Binop (Add,FP,SP,Oimm(8-tframe)); Sw (RA,Areg(0,FP));] 
   in
   let code = prog.text ++ label ++ frame ++ save ++ core
   in
-  {text = code ; data = data}
+  let exit_code s =
+    if ((String.compare s "main") = 0 ) then
+     mips [Move (T1,V0);Li (V0,10);Syscall]
+    else mips [Jr RA]
+  in
+  {text = code ++ (exit_code id.node) ; data = data}
   
 
 
@@ -332,6 +395,6 @@ let compile_file ast =
   try
     let sortie =List.fold_left (fun acc d -> compile_data acc d) prog  ast 
     in 
-    sortie
+    {text = sortie.text ++ predfun; data = sortie.data}
   with _ ->
     failwith !msg 
