@@ -26,6 +26,6 @@ putchar:
 	jr   $ra
 sbrk:
 	.data
-c:
+c_1:
 	.byte 1
 
