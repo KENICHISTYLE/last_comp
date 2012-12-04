@@ -1,5 +1,6 @@
 int i;
-
+int m;
+int l;
 
 struct c {
  int x ;

@@ -6,7 +6,7 @@ module Env = Map.Make(String)
 
 let var_nb = ref 0
 let rename_var id =
-  incr(var_nb);{loc = id.loc ;node = id.node^string_of_int(!var_nb)}
+  incr(var_nb);{loc = id.loc ;node = id.node^"_"^string_of_int(!var_nb)}
 
 let rec rename_expr env e =
   let node =

@@ -319,7 +319,7 @@ let compile_data prog = function
 |Dvars dvl -> 
   let res1 = List.map (fun v -> recup_data v ) dvl in
   let res =List.concat res1
-  in {text = prog.text ; data = res}
+  in {text = prog.text ; data = prog.data @ res}
 
 | Dstruct (id, decls)  -> Hashtbl.add struct_env id.node decls;prog
 

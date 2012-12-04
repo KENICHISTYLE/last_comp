@@ -67,6 +67,10 @@ putchar:
 	jr   $ra
 sbrk:
 	.data
-i1:
+i_1:
+	.word 0
+m_2:
+	.word 0
+l_3:
 	.word 0
 
