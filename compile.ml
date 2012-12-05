@@ -79,29 +79,6 @@ let print =
   Hashtbl.iter 
     (fun id s -> msg := " Struct : "^id ^", size : "^string_of_int(s) ) struct_size
 
-let x = ref 0 
-let rename id =  
-  incr(x);{loc = id.loc ;node = id.node^string_of_int(!x)}
-
-
-
-
-
-(*
-
-
-let compile_decl d =
-match d with
-| Dvars dvl ->
-  let res = 
-    List.map 
-      (fun  (t,id) -> 
-        (t,rename id))  dvl
-  in Dvars res
-
-*)
-
-
 
 let prog = {text = nop; data = [] }
 exception Haha
@@ -162,7 +139,7 @@ end
         begin
         try
         let fp = StrMap.find x.node env in
-        [push;Lw(A0,Areg(-fp,FP));Sw(A0,Areg(0,SP))]
+        [push;Lw(A0,Areg(fp,FP));Sw(A0,Areg(0,SP))]
         with Not_found ->
         if not (Hashtbl.mem genv x.node) then raise Haha;
         [push;Lw(A0,Alab x.node);Sw(A0,Areg(0,SP))]
@@ -236,22 +213,23 @@ end
     end 
   |Ecall(id,iel) ->
     let taille_retour = get_size e.loc in
-    let taille =List.fold_left (fun acc x->(get_size x.loc)+acc) 0 iel in
-  let reserver_taille_retour = [Binop(Add,SP,SP,Oimm(-taille_retour))] in
-  let list_list = List.map (compile_expr env) iel 
-  in
-  let passer_arg = List.concat list_list
-  in
-  let sauvegarder = [] 
-  in
-  let appler = [Jal(id.node)]
-  in
-  let apres_appel = [Binop(Add,SP,SP,Oimm(taille))] 
-  in
-  reserver_taille_retour@passer_arg @ sauvegarder @ appler @ apres_appel
-|_ ->[ Inline "Expression"]
-
- 
+    let taille = List.fold_left (fun acc x->(get_size x.loc)+acc) 0 iel in
+    let reserver_taille_retour = [Binop(Add,SP,SP,Oimm(-taille_retour))] in
+    let list_list = List.map (compile_expr env) iel 
+    in
+    let passer_arg = List.concat list_list
+    in 
+    let appler = [Jal(id.node)]
+    in
+    let resultat = 
+      if (taille_retour > 0) then
+        [Sw(V0,Areg(0,SP))]
+      else []
+    in
+    let apres_appel = [Binop(Add,SP,SP,Oimm(taille))]@resultat 
+    in
+    reserver_taille_retour@ passer_arg @ appler @ apres_appel
+    
 
 let cont_br = ref 0
 let loop_count = ref 0
@@ -263,7 +241,7 @@ let get_nb_br nc =
 let rec compile_stmt env i =
 match i.node with
 |Sskip -> []
-|Sexpr e -> compile_expr env e
+|Sexpr e -> (compile_expr env e) @ [pop]
 |Sif (e,s1,s2) ->
   let res = compile_expr env e 
   in
@@ -314,9 +292,9 @@ match i.node with
   in 
   let env = List.fold_left 
     (fun env (t,id) -> 
-      let s = (get_size t) in 
-      changer := s + !changer ;
-      StrMap.add id.node  (!changer) env) env (fst block) 
+      let s =  !changer  in 
+      changer := s + (get_size t) ;
+      StrMap.add id.node s  env) env (fst block) 
   in
   let stm = List.map (compile_stmt env) (snd block)
   in
@@ -328,12 +306,13 @@ match i.node with
     | Some s -> 
       let e = compile_expr env s 
       in
-      e@[Move (V0,A0);Lw(RA,Areg(0,FP));Binop(Sub,SP,SP,Oimm (0))] 
+      e@[Lw(V0,Areg(0,SP))] 
     (* a mettre la taille de la frame*)
     | None -> 
-      [Lw(RA,Areg(0,FP));Binop(Sub,SP,SP,Oimm (0))]
+      []
   (* a mettre la taille de la frame*)
   end
+
 
 
 (* vd signfi variable declaration *)
@@ -354,29 +333,39 @@ let recup_data vd = let ty = fst vd in
 
 
 let compile_block env  block = 
-  let frame = ref 0
+  let frame = ref 4
   in   
   let env = List.fold_left 
     (fun env (t,id) -> 
-      let s = (get_size t) in      
-      let env = StrMap.add id.node  (!frame) env 
+      let s = !frame  in      
+      let env = StrMap.add id.node s  env 
       in
-      frame := s + !frame; env ) env (fst block) 
+      frame := s + (get_size t); env ) env (fst block) 
   in
   let stm = List.fold_left (fun acc i -> acc ++(mips (compile_stmt env i))) nop (snd block)
   in
    stm,!frame 
 
+
 let predfun = 
   let putchar =
-    let frame = Binop (Sub,SP,SP,Oimm 8)
-    in
-    let save =  [Sw (FP,Areg((-4),SP)); Binop (Add,FP,SP,Oimm(0)); Sw (RA,Areg(0,FP));] 
+    let save = 
+      [push;
+        Sw (FP,Areg(0,SP));
+        push;
+        Move (FP,SP);
+        Sw (RA,Areg(0,FP));] 
     in
     let label = Label "putchar"
     in
-    label::frame::save @
-      [Li (V0,11) ; Lbu (A0, Areg(8,FP));Syscall;Lw(RA,Areg(0,FP));Binop(Sub,SP,SP,Oimm (8));Jr RA ]
+    label::
+      [Lbu (A0, Areg(0,SP));
+       Li(V0,11);Syscall;
+      (* Lw(RA,Areg(0,FP));
+       Binop(Sub,SP,SP,Oimm (8));*)
+       Move (V0,A0) ;
+       Jr RA ]
+     (* [Lbu (A0, Areg(8,FP));Syscall;Lw(RA,Areg(0,FP));Binop(Sub,SP,SP,Oimm (8));Move (V0,A0) ;Jr RA ]*)
   in
   let sbrk = [ Label "sbrk" ]
   in
@@ -394,35 +383,53 @@ let compile_data prog = function
 | Dunion  (id, decls)  -> Hashtbl.add union_env  id.node decls;prog 
 
 | Dfun (t,id,dvl,infb) -> 
-  let label = mips [Label id.node] 
+  let label =   
+      mips [Label id.node]
   in
-  (*let dec_args = ref (List.leng
+  (* calcule des decalages d'arguments *)
+  let dec_args = ref 8
   in 
-  let env = List.fold_left (fun env (t,id) -> let env = StrMap.add id.node  !dec_args 
-  *)
-  let core,tframe = compile_block StrMap.empty infb
+  let env = 
+    List.fold_right
+      (fun (t,id) env -> 
+        let s = !dec_args in
+        let () = dec_args := !dec_args + get_size(t) in
+        StrMap.add id.node s env)
+      dvl StrMap.empty 
+  in
+  (* compilation du core de la fonction *)
+  let core,tframe = compile_block env infb
   in
   let data = prog.data;
   in
-  let frame = mips [Binop (Sub,SP,SP,Oimm (tframe+8))]
+  let frame = mips [Binop (Sub,SP,SP,Oimm (tframe))]
   in
-  let save = mips [Sw (FP,Areg((4-tframe),SP)); Binop (Add,FP,SP,Oimm(tframe)); Sw (RA,Areg(0,FP));] 
+  let save = mips [push;
+                   Sw (FP,Areg((0),SP));
+                   push;
+                   Move(FP,SP);
+                   Sw (RA,Areg(0,FP));] 
   in
-  let code = prog.text ++ label ++ frame ++ save ++ core
+  let code = prog.text ++ label ++ save ++ frame ++ core
   in
-  let exit_code s =
-    if ((String.compare s "main") = 0 ) then
-     mips [Move (T1,V0);Li (V0,10);Syscall]
-    else mips [Jr RA]
+  let exit_code  =
+   mips [Lw(RA,Areg(0,FP));Lw(FP,Areg(4,FP));Binop(Add,SP,SP,Oimm (8+tframe));Jr RA]
   in
-  {text = code ++ (exit_code id.node) ; data = data}
+  {text = code ++ exit_code ; data = data}
   
-
+let main =
+  mips
+  [
+    Label "main";    
+    Jal "prog_main";  
+    Li (V0,10);
+    Syscall
+  ]
 
 let compile_file ast = 
   try
     let sortie =List.fold_left (fun acc d -> compile_data acc d) prog  ast 
     in 
-    {text = sortie.text ++ predfun; data = sortie.data}
+    {text = main ++ sortie.text ++ predfun; data = sortie.data}
   with _ ->
     failwith !msg 

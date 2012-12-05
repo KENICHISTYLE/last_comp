@@ -114,7 +114,12 @@ let rename_decl  = function
 	      (t,v)
 	    ) 
 	    dvl)
-  |Dfun(t, id, dvl, block) ->    
+  |Dfun(t, id, dvl, block) -> 
+    let fname =
+      if ((String.compare id.node "main") = 0 ) then
+        "prog_main"
+      else  id.node
+    in
     let local,ndvl = (List.fold_left
 	    (fun (env,dvl) (t,id) -> 
 	      let v = rename_var id in
@@ -123,6 +128,7 @@ let rename_decl  = function
 	    (Env.empty,[]) dvl)
     in
     let nblock = rename_block local block in
+    let id = {loc = id.loc; node = fname} in
     Dfun(t,id,(List.rev ndvl),nblock)
   |_ as d -> d 
 

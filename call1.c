@@ -1,11 +1,15 @@
 
 void f(int x, int y) {
   putchar(x);
+  putchar(y);
   //return;
 }
 
 int main() {
   //f('A', 'B');
-  //f('B', 'A');
-  //putchar(10);
+  int i;
+  i = 0;
+  //i++;	
+  f('B', 'A');
+  putchar(10);
 }
