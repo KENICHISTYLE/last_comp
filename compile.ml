@@ -104,20 +104,26 @@ match d with
 
 
 let prog = {text = nop; data = [] }
+exception Haha
+
 let push = Binop(Sub,SP,SP,Oimm 4)
 let pop = Binop(Add,SP,SP,Oimm 4)
 let compile_gauche env e =
 match e.node with
 |Eident id ->
   begin
-    let fp = StrMap.find id.node env in
-    [push;Binop(Add,A0,FP,Oimm(-fp));Sw(A0,Areg(0,SP))]
+    try
+      let fp = StrMap.find id.node env in
+      [push;Binop(Add,A0,FP,Oimm(-fp));Sw(A0,Areg(0,SP))]
+    with Not_found ->
+      if not (Hashtbl.mem genv id.node) then raise Haha;
+      [push;La(A0,id.node);Sw(A0,Areg(0,SP))]
   end
 |_ -> []
-
+  
 
 (*let push_r r t = push ::[Sw(r,t)]*) 
-exception Haha
+
 
 let logique =function
   |Band|Bor ->[Lw(A0,Areg(0,SP));Binop(Ne,A0,A0,Oreg( ZERO));Sw(A0,Areg(0,SP))]
@@ -194,23 +200,43 @@ end
 |Eunop (op,expr) ->
   let com_expr = compile_expr env expr in
   let com_expr_gauche = compile_gauche env expr in
+  let nombre e = 
+    if is_pointer e.loc 
+    then 4
+    else 1
+  in
+  let var = nombre expr in
+  let incre = [Lw(A0,Areg(0,SP));Binop(Add,A0,A0,Oimm(var))] in
+  let de_incre = [Lw(A0,Areg(0,SP));Binop(Sub,A0,A0,Oimm(var))] in
+  let enrgister = [Lw(A1,Areg(4,SP));Sw(A0,Areg(0,A1))] in
+  let post = [Lw(A0,Areg(0,SP));Sw(A0,Areg(4,SP)) ] in
+  let pre = [Sw(A0,Areg(4,SP));] in
   let changer = match op with
-    |Upre_inc 
-    |Upost_inc
-    |Upre_dec
-    |Upost_dec   	
+    |Upre_inc ->incre@  enrgister@pre
+    |Upost_inc->incre@ enrgister@post
+    |Upre_dec->de_incre@ enrgister@pre
+    |Upost_dec-> de_incre@ enrgister@post	
     |_ -> [Inline "op un "] 
   in
-    com_expr_gauche@com_expr @changer
-|Edot(ex,id) ->
   begin
-    let com_gauche = compile_gauche env ex
-    in 
-    []
-  end 
-|Ecall(id,iel) ->
-  let taille_retour = get_size e.loc in
-  let taille =List.fold_left (fun acc x->(get_size x.loc)+acc) 0 iel in
+    match op with
+    |Upre_inc | Upost_inc | Upre_dec | Upost_dec
+      ->com_expr_gauche@com_expr@changer@[pop]
+    |Ustar  -> com_expr @[Lw(A0,Areg(0,SP));Lw(A0,Areg(0,A0));Sw(A0,Areg(0,SP))]
+    |Uplus  -> com_expr
+    |Uminus -> com_expr @[Lw(A0,Areg(0,SP));Binop(Sub,A0,ZERO,Oreg( A0));Sw(A0,Areg(0,SP))]
+    |Unot  ->com_expr @[ Lw(A0,Areg(0,SP));Binop(Eq,A0,ZERO,Oreg( A0));Sw(A0,Areg(0,SP))] 
+    |Uamp  -> com_expr_gauche
+  end
+  |Edot(ex,id) ->
+    begin
+      let com_gauche = compile_gauche env ex
+      in 
+      []
+    end 
+  |Ecall(id,iel) ->
+    let taille_retour = get_size e.loc in
+    let taille =List.fold_left (fun acc x->(get_size x.loc)+acc) 0 iel in
   let reserver_taille_retour = [Binop(Add,SP,SP,Oimm(-taille_retour))] in
   let list_list = List.map (compile_expr env) iel 
   in
