@@ -17,7 +17,10 @@ main:
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
-	and  $a0, $a0, $a1
+	mul  $a0, $a0, $a1
+	sw   $a0, 0($sp)
+	lw   $a0, 0($sp)
+	sne  $a0, $a0, $zero
 	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
@@ -39,7 +42,10 @@ main:
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
-	and  $a0, $a0, $a1
+	mul  $a0, $a0, $a1
+	sw   $a0, 0($sp)
+	lw   $a0, 0($sp)
+	sne  $a0, $a0, $zero
 	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
@@ -55,10 +61,16 @@ main:
 	sub  $sp, $sp, 4
 	li   $a0, 1
 	sw   $a0, 0($sp)
+	sub  $sp, $sp, 4
+	li   $a0, 0
+	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
-	and  $a0, $a0, $a1
+	mul  $a0, $a0, $a1
+	sw   $a0, 0($sp)
+	lw   $a0, 0($sp)
+	sne  $a0, $a0, $zero
 	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)

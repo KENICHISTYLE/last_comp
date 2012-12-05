@@ -13,10 +13,6 @@ let union_size = Hashtbl.create 1007
 
 module StrMap = Map.Make(String)
 
-type funt = {retour : c_type ; dvl : var_decl list  }
-
-let globfun = Hashtbl.create 107
-
 let (genv : (string ,unit) Hashtbl.t) = Hashtbl.create 1007
 
 let data_list = []
@@ -123,10 +119,14 @@ match e.node with
 (*let push_r r t = push ::[Sw(r,t)]*) 
 exception Haha
 
+let logique =function
+  |Band|Bor ->[Lw(A0,Areg(0,SP));Binop(Ne,A0,A0,Oreg( ZERO));Sw(A0,Areg(0,SP))]
+  |_ -> []
+
 
 let rec compile_expr env e =
 match e.node with
-|Enull ->[]
+|Enull ->[push;Li(A0,0);Sw(A0,Areg(0,SP))]
 |Econst c -> 
   begin
     match c with
@@ -175,19 +175,20 @@ end
       |Bgt  -> Mips.Gt
       |Bge  -> Mips.Ge
       |Bmod -> Mips.Rem
-      |Band -> Mips.And
-      |Bor  -> Mips.Or
+      |Band -> Mips.Mul
+      |Bor  -> Mips.Add
       |_ -> assert false
     in
     let code_e1 = compile_expr env e1 in
     let code_e2 = compile_expr env e2 in
+    
    code_e1 @ code_e2 @ 
       [Lw(A0,Areg(4,SP));
        Lw(A1,Areg(0,SP));
        pop;
        Binop(operation,A0,A0,Oreg A1);
        Sw(A0,Areg(0,SP));
-      ]
+      ]@(logique op)
    
   end
 |Eunop (op,expr) ->
@@ -367,11 +368,12 @@ let compile_data prog = function
 | Dunion  (id, decls)  -> Hashtbl.add union_env  id.node decls;prog 
 
 | Dfun (t,id,dvl,infb) -> 
-  let () =
-    Hashtbl.add globfun id.node {retour = t; dvl = dvl} 
-  in
   let label = mips [Label id.node] 
   in
+  (*let dec_args = ref (List.leng
+  in 
+  let env = List.fold_left (fun env (t,id) -> let env = StrMap.add id.node  !dec_args 
+  *)
   let core,tframe = compile_block StrMap.empty infb
   in
   let data = prog.data;

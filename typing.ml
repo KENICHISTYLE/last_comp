@@ -250,7 +250,7 @@ let rec type_expr env e =
 	    else
               error e0.loc (sprintf "cannot dereference a non pointer type %s" (type_to_string et0.loc))
         | Uamp ->
-            if is_lvalue et0 then et0.loc
+            if is_lvalue et0 then (Tpointer et0.loc)
             else
               error e0.loc "operator & requires an lvalue argument"
       in
@@ -271,13 +271,14 @@ let rec type_expr env e =
       let t1 = et1.loc and t2 = et2.loc in
       begin
 	match op with
-	| Badd | Bsub when
-	    compatible t1 t2 && compatible t1 Tint && compatible t2 Tint
-            || is_pointer t1 && compatible t2 Tint
-            || is_pointer t2 && compatible t1 Tint
-            || is_pointer t1 && is_pointer t2 && op == Bsub
-            ->
-	      node (Ebinop(op, et1, et2)) Tint
+	| Badd | Bsub when compatible t1 Tint && compatible t2 Tint ->
+            node (Ebinop(op, et1, et2)) Tint
+        | Badd | Bsub when is_pointer t1 && compatible t2 Tint ->
+            node (Ebinop(op, et1, et2)) t1
+        | Badd when compatible t1 Tint && is_pointer t2 ->
+            node (Ebinop(op, et1, et2)) t2
+        | Bsub when is_pointer t1 && is_pointer t2 ->
+            node (Ebinop(op, et1, et2)) Tint
 	| _  when is_num t1 && is_num t2 -> node (Ebinop(op, et1, et2)) Tint
 	| _  -> error e.loc ("incompatible type for binary operator '" ^ binop_to_string op ^"'")
       end
@@ -430,7 +431,7 @@ let enter_fun ret f params =
 (** [built_in] variable globale contenant les fonctions prédéfinies *)
 
 let built_in = [
-  Tvoid, mk_dummy "putchar",  [ Tint, dummy_name ];
+  Tint, mk_dummy "putchar",  [ Tint, dummy_name ];
   Tpointer Tvoid, mk_dummy "sbrk", [ Tint, dummy_name ];
 ]
 
