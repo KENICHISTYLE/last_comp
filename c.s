@@ -1,58 +1,68 @@
 	.text
 main:
-	sub  $sp, $sp, 12
+	jal  prog_main
+	li   $v0, 10
+	syscall
+prog_main:
+	sub  $sp, $sp, 4
 	sw   $fp, 0($sp)
-	add  $fp, $sp, 4
+	sub  $sp, $sp, 4
+	move $fp, $sp
 	sw   $ra, 0($fp)
-	add  $sp, $sp, 0
+	sub  $sp, $sp, 4
+	add  $sp, $sp, -4
 	sub  $sp, $sp, 4
 	li   $a0, 114
 	sw   $a0, 0($sp)
 	jal  putchar
 	add  $sp, $sp, 4
-	add  $sp, $sp, 0
+	sw   $v0, 0($sp)
+	add  $sp, $sp, 4
+	add  $sp, $sp, -4
 	sub  $sp, $sp, 4
 	li   $a0, 49
 	sw   $a0, 0($sp)
 	jal  putchar
 	add  $sp, $sp, 4
-	add  $sp, $sp, 0
+	sw   $v0, 0($sp)
+	add  $sp, $sp, 4
+	add  $sp, $sp, -4
 	sub  $sp, $sp, 4
 	li   $a0, 50
 	sw   $a0, 0($sp)
 	jal  putchar
 	add  $sp, $sp, 4
-	add  $sp, $sp, 0
+	sw   $v0, 0($sp)
+	add  $sp, $sp, 4
+	add  $sp, $sp, -4
 	sub  $sp, $sp, 4
 	li   $a0, 51
 	sw   $a0, 0($sp)
 	jal  putchar
 	add  $sp, $sp, 4
-	add  $sp, $sp, 0
+	sw   $v0, 0($sp)
+	add  $sp, $sp, 4
+	add  $sp, $sp, -4
 	sub  $sp, $sp, 4
 	li   $a0, 52
 	sw   $a0, 0($sp)
 	jal  putchar
 	add  $sp, $sp, 4
+	sw   $v0, 0($sp)
+	add  $sp, $sp, 4
 	sub  $sp, $sp, 4
 	li   $a0, 1
 	sw   $a0, 0($sp)
-	move $v0, $a0
+	lw   $v0, 0($sp)
 	lw   $ra, 0($fp)
-	sub  $sp, $sp, 0
-	move $t1, $v0
-	li   $v0, 10
-	syscall
+	lw   $fp, 4($fp)
+	add  $sp, $sp, 12
+	jr   $ra
 putchar:
-	sub  $sp, $sp, 8
-	sw   $fp, -4($sp)
-	add  $fp, $sp, 0
-	sw   $ra, 0($fp)
+	lbu   $a0, 0($sp)
 	li   $v0, 11
-	lbu   $a0, 8($fp)
 	syscall
-	lw   $ra, 0($fp)
-	sub  $sp, $sp, 8
+	move $v0, $a0
 	jr   $ra
 sbrk:
 	.data

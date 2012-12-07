@@ -241,7 +241,8 @@ let get_nb_br nc =
 let rec compile_stmt env i =
 match i.node with
 |Sskip -> []
-|Sexpr e -> (compile_expr env e) @ [pop]
+|Sexpr e -> let taille = get_size e.loc in
+ (compile_expr env e) @[ (Binop(Add,SP,SP,Oimm taille))]         (* [pop]*)
 |Sif (e,s1,s2) ->
   let res = compile_expr env e 
   in
@@ -338,13 +339,13 @@ let compile_block env  block =
   let env = List.fold_left 
     (fun env (t,id) -> 
       let s = !frame  in      
-      let env = StrMap.add id.node s  env 
+      let env = StrMap.add id.node (-s)  env  (* position par rapport fp est negatif *)
       in
       frame := s + (get_size t); env ) env (fst block) 
   in
   let stm = List.fold_left (fun acc i -> acc ++(mips (compile_stmt env i))) nop (snd block)
   in
-   stm,!frame 
+   stm,( !frame -4) (*  je crois la taille de  frame !=  !frame *)
 
 
 let predfun = 
