@@ -91,7 +91,7 @@ match e.node with
   begin
     try
       let fp = StrMap.find id.node env in
-      [push;Binop(Add,A0,FP,Oimm(-fp));Sw(A0,Areg(0,SP))]
+      [push;Binop(Add,A0,FP,Oimm(fp));Sw(A0,Areg(0,SP))]
     with Not_found ->
       if not (Hashtbl.mem genv id.node) then raise Haha;
       [push;La(A0,id.node);Sw(A0,Areg(0,SP))]
