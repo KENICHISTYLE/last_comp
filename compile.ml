@@ -85,7 +85,7 @@ exception Haha
 
 let push = Binop(Sub,SP,SP,Oimm 4)
 let pop = Binop(Add,SP,SP,Oimm 4)
-let compile_gauche env e =
+let rec  compile_gauche env e =
 match e.node with
 |Eident id ->
   begin
@@ -96,6 +96,7 @@ match e.node with
       if not (Hashtbl.mem genv id.node) then raise Haha;
       [push;La(A0,id.node);Sw(A0,Areg(0,SP))]
   end
+|Eunop (Ustar ,expr) ->compile_gauche env  expr
 |_ -> []
   
 
