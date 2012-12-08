@@ -5,6 +5,9 @@ main:
 	add  $fp, $sp, 8
 	sw   $ra, 0($fp)
 	sub  $sp, $sp, 4
+	li   $a0, 98
+	sw   $a0, 0($sp)
+	sub  $sp, $sp, 4
 	li   $a0, 1
 	sw   $a0, 0($sp)
 	move $v0, $a0
