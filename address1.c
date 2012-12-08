@@ -1,9 +1,17 @@
 
 int main() {
   
+ 
+  
+  
 
   int x;
   int *p;
+  int y;
+  
+  y;
+  x;
+  
   p = &x;
   *p = 'A'; 
   putchar(x);

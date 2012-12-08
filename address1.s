@@ -9,12 +9,20 @@ prog_main:
 	sub  $sp, $sp, 4
 	move $fp, $sp
 	sw   $ra, 0($fp)
-	sub  $sp, $sp, 8
+	sub  $sp, $sp, 12
 	sub  $sp, $sp, 4
-	add  $a0, $fp, -4
+	lw   $a0, -12($fp)
 	sw   $a0, 0($sp)
+	add  $sp, $sp, 4
+	sub  $sp, $sp, 4
+	lw   $a0, -4($fp)
+	sw   $a0, 0($sp)
+	add  $sp, $sp, 4
 	sub  $sp, $sp, 4
 	add  $a0, $fp, -8
+	sw   $a0, 0($sp)
+	sub  $sp, $sp, 4
+	add  $a0, $fp, -4
 	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
@@ -23,7 +31,7 @@ prog_main:
 	sw   $a1, 0($sp)
 	add  $sp, $sp, 4
 	sub  $sp, $sp, 4
-	add  $a0, $fp, -4
+	add  $a0, $fp, -8
 	sw   $a0, 0($sp)
 	sub  $sp, $sp, 4
 	li   $a0, 65
@@ -36,7 +44,7 @@ prog_main:
 	add  $sp, $sp, 4
 	add  $sp, $sp, -4
 	sub  $sp, $sp, 4
-	lw   $a0, -8($fp)
+	lw   $a0, -4($fp)
 	sw   $a0, 0($sp)
 	jal  putchar
 	add  $sp, $sp, 4
@@ -44,7 +52,7 @@ prog_main:
 	add  $sp, $sp, 4
 	add  $sp, $sp, -4
 	sub  $sp, $sp, 4
-	lw   $a0, -8($fp)
+	lw   $a0, -4($fp)
 	sw   $a0, 0($sp)
 	jal  putchar
 	add  $sp, $sp, 4
@@ -60,7 +68,7 @@ prog_main:
 	add  $sp, $sp, 4
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
-	add  $sp, $sp, 16
+	add  $sp, $sp, 20
 	jr   $ra
 putchar:
 	lbu   $a0, 0($sp)
