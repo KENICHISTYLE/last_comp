@@ -85,6 +85,10 @@ exception Haha
 
 let push = Binop(Sub,SP,SP,Oimm 4)
 let pop = Binop(Add,SP,SP,Oimm 4)
+
+let logique =function
+  |Band|Bor ->[Lw(A0,Areg(0,SP));Binop(Ne,A0,A0,Oreg( ZERO));Sw(A0,Areg(0,SP))]
+  |_ -> []
 let rec  compile_gauche env e =
 match e.node with
 |Eident id ->
@@ -96,19 +100,10 @@ match e.node with
       if not (Hashtbl.mem genv id.node) then raise Haha;
       [push;La(A0,id.node);Sw(A0,Areg(0,SP))]
   end
-|Eunop (Ustar ,expr) ->compile_gauche env  expr
+|Eunop (Ustar ,expr) ->compile_expr env  expr
 |_ -> []
-  
-
-(*let push_r r t = push ::[Sw(r,t)]*) 
-
-
-let logique =function
-  |Band|Bor ->[Lw(A0,Areg(0,SP));Binop(Ne,A0,A0,Oreg( ZERO));Sw(A0,Areg(0,SP))]
-  |_ -> []
-
-
-let rec compile_expr env e =
+and
+ compile_expr env e =
 match e.node with
 |Enull ->[push;Li(A0,0);Sw(A0,Areg(0,SP))]
 |Econst c -> 
@@ -369,7 +364,7 @@ let predfun =
        Jr RA ]
      (* [Lbu (A0, Areg(8,FP));Syscall;Lw(RA,Areg(0,FP));Binop(Sub,SP,SP,Oimm (8));Move (V0,A0) ;Jr RA ]*)
   in
-  let sbrk = [ Label "sbrk" ]
+  let sbrk = [ Label "sbrk";Li(V0,9);Lw(A0,Areg(0,SP));Syscall;Move(V0,A0);Jr RA]
   in
   mips (putchar @ sbrk)
 

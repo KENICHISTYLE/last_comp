@@ -14,7 +14,7 @@ int main() {
   
   p = &x;
   *p = 'A'; 
-  putchar(x);
+  putchar('A');
   putchar(x);
   /*
   putchar(*p);
