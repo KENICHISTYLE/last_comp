@@ -1,5 +1,6 @@
 (* Programme principal *)
 
+open Renamer 
 open Format
 open Lexing
 open Lexer
@@ -44,7 +45,8 @@ let () =
     if !parse_only then exit 0;
     let p = Typing.file p in
     if !type_only then exit 0;
-    let c = Compile.compile_file p in
+    let r = Renamer.rename_file p in
+    let c = Compile.compile_file r in
     let output_file = (Filename.chop_suffix file ".c") ^ ".s" in
     let out = open_out output_file in
     let outf = formatter_of_out_channel out in

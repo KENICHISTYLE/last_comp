@@ -13,10 +13,6 @@ let union_size = Hashtbl.create 1007
 
 module StrMap = Map.Make(String)
 
-type funt = {retour : c_type ; dvl : var_decl list  }
-
-let globfun = Hashtbl.create 107
-
 let (genv : (string ,unit) Hashtbl.t) = Hashtbl.create 1007
 
 let data_list = []
@@ -83,57 +79,58 @@ let print =
   Hashtbl.iter 
     (fun id s -> msg := " Struct : "^id ^", size : "^string_of_int(s) ) struct_size
 
-let x = ref 0 
-let rename id =  
-  incr(x);{loc = id.loc ;node = id.node^string_of_int(!x)}
-
-
-
-
-
-(*
-
-
-let compile_decl d =
-match d with
-| Dvars dvl ->
-  let res = 
-    List.map 
-      (fun  (t,id) -> 
-        (t,rename id))  dvl
-  in Dvars res
-
-*)
-
-
 
 let prog = {text = nop; data = [] }
+exception Haha
 
-let compile_gauche env e =
-match e.node with
-|Eident id -> []
-|_ -> []
 let push = Binop(Sub,SP,SP,Oimm 4)
 let pop = Binop(Add,SP,SP,Oimm 4)
-exception Haha
+let rec  compile_gauche env e =
+match e.node with
+|Eident id ->
+  begin
+    try
+      let fp = StrMap.find id.node env in
+      [push;Binop(Add,A0,FP,Oimm(fp));Sw(A0,Areg(0,SP))]
+    with Not_found ->
+      if not (Hashtbl.mem genv id.node) then raise Haha;
+      [push;La(A0,id.node);Sw(A0,Areg(0,SP))]
+  end
+|Eunop (Ustar ,expr) ->compile_gauche env  expr
+|_ -> []
+  
+
+(*let push_r r t = push ::[Sw(r,t)]*) 
+
+
+let logique =function
+  |Band|Bor ->[Lw(A0,Areg(0,SP));Binop(Ne,A0,A0,Oreg( ZERO));Sw(A0,Areg(0,SP))]
+  |_ -> []
 
 
 let rec compile_expr env e =
 match e.node with
-|Enull ->[]
-
+|Enull ->[push;Li(A0,0);Sw(A0,Areg(0,SP))]
 |Econst c -> 
   begin
     match c with
     |Cint i -> [push;Li(A0,Int32.to_int i);Sw(A0,Areg(0,SP))]
-    |Cstring s ->[]
+    |Cstring s ->[push;La(A0,s);Sw(A0,Areg(0,SP))]
   end
 |Eassign (e1,e2) ->
+begin
   let r2 = compile_expr env e2
   in
-  let r1 = compile_gauche  env e1
+  let r1 = compile_gauche env e1
   in
-  r1@r2
+  r1@r2@
+    [Lw(A0,Areg(4,SP));
+     Lw(A1,Areg(0,SP));
+     pop;
+     Sw(A1,Areg(0,A0));
+     Sw(A1,Areg(0,SP))
+    ]
+end
 |Esizeof x ->
         begin   
         let taille = get_size x in
@@ -143,7 +140,7 @@ match e.node with
         begin
         try
         let fp = StrMap.find x.node env in
-        [push;Lw(A0,Areg(-fp,FP));Sw(A0,Areg(0,SP))]
+        [push;Lw(A0,Areg(fp,FP));Sw(A0,Areg(0,SP))]
         with Not_found ->
         if not (Hashtbl.mem genv x.node) then raise Haha;
         [push;Lw(A0,Alab x.node);Sw(A0,Areg(0,SP))]
@@ -162,27 +159,77 @@ match e.node with
       |Bgt  -> Mips.Gt
       |Bge  -> Mips.Ge
       |Bmod -> Mips.Rem
-      |Band -> Mips.And
-      |Bor  -> Mips.Or
-      |_ -> assert false
+      |Band -> Mips.Mul
+      |Bor  -> Mips.Add
     in
     let code_e1 = compile_expr env e1 in
     let code_e2 = compile_expr env e2 in
-    code_e1 @ code_e2 
+    
+   code_e1 @ code_e2 @ 
+      [Lw(A0,Areg(4,SP));
+       Lw(A1,Areg(0,SP));
+       pop;
+       Binop(operation,A0,A0,Oreg A1);
+       Sw(A0,Areg(0,SP));
+      ]@(logique op)
+   
   end
-
 |Eunop (op,expr) ->
+  let com_expr = compile_expr env expr in
+  let com_expr_gauche = compile_gauche env expr in
+  let nombre e = 
+    if is_pointer e.loc 
+    then 4
+    else 1
+  in
+  let var = nombre expr in
+  let incre = [Lw(A0,Areg(0,SP));Binop(Add,A0,A0,Oimm(var))] in
+  let de_incre = [Lw(A0,Areg(0,SP));Binop(Sub,A0,A0,Oimm(var))] in
+  let enrgister = [Lw(A1,Areg(4,SP));Sw(A0,Areg(0,A1))] in
+  let post = [Lw(A0,Areg(0,SP));Sw(A0,Areg(4,SP)) ] in
+  let pre = [Sw(A0,Areg(4,SP));] in
+  let changer = match op with
+    |Upre_inc ->incre@  enrgister@pre
+    |Upost_inc->incre@ enrgister@post
+    |Upre_dec->de_incre@ enrgister@pre
+    |Upost_dec-> de_incre@ enrgister@post	
+    |_ -> [Inline "op un "] 
+  in
   begin
     match op with
-      |Upre_inc 
-      |Upost_inc
-      |Upre_dec
-      |Upost_dec
-      
-      |_ -> []
+    |Upre_inc | Upost_inc | Upre_dec | Upost_dec
+      ->com_expr_gauche@com_expr@changer@[pop]
+    |Ustar  -> com_expr @[Lw(A0,Areg(0,SP));Lw(A0,Areg(0,A0));Sw(A0,Areg(0,SP))]
+    |Uplus  -> com_expr
+    |Uminus -> com_expr @[Lw(A0,Areg(0,SP));Binop(Sub,A0,ZERO,Oreg( A0));Sw(A0,Areg(0,SP))]
+    |Unot  ->com_expr @[ Lw(A0,Areg(0,SP));Binop(Eq,A0,ZERO,Oreg( A0));Sw(A0,Areg(0,SP))] 
+    |Uamp  -> com_expr_gauche
   end
-|_ ->[]
- 
+  |Edot(ex,id) ->
+    begin
+      let com_gauche = compile_gauche env ex
+      in 
+      []
+    end 
+  |Ecall(id,iel) ->
+    let taille_retour = get_size e.loc in
+    let taille = List.fold_left (fun acc x->(get_size x.loc)+acc) 0 iel in
+    let reserver_taille_retour = [Binop(Add,SP,SP,Oimm(-taille_retour))] in
+    let list_list = List.map (compile_expr env) iel 
+    in
+    let passer_arg = List.concat list_list
+    in 
+    let appler = [Jal(id.node)]
+    in
+    let resultat = 
+      if (taille_retour > 0) then
+        [Sw(V0,Areg(0,SP))]
+      else []
+    in
+    let apres_appel = [Binop(Add,SP,SP,Oimm(taille))]@resultat 
+    in
+    reserver_taille_retour@ passer_arg @ appler @ apres_appel
+    
 
 let cont_br = ref 0
 let loop_count = ref 0
@@ -192,10 +239,10 @@ let get_nb_br nc =
   string_of_int !nc
 
 let rec compile_stmt env i =
-
 match i.node with
 |Sskip -> []
-|Sexpr e -> compile_expr env e
+|Sexpr e -> let taille = get_size e.loc in
+ (compile_expr env e) @[ (Binop(Add,SP,SP,Oimm taille))]         (* [pop]*)
 |Sif (e,s1,s2) ->
   let res = compile_expr env e 
   in
@@ -209,7 +256,9 @@ match i.node with
   in
   let s2 = compile_stmt env s2
   in
-  res@Bnez (A0,label1)::s2@ ( B label2::Label (label1)::s1@ [Label label2])
+  let test = [pop;Bnez (A0,label1)](* si il ya un pb rajouter le load dans a0 *)
+  in
+  res@test @ s2@ ( B label2::Label (label1)::s1@ [Label label2])
 
 |Swhile (e,s) ->
   let res = compile_expr env  e
@@ -222,7 +271,9 @@ match i.node with
   in
   let s = compile_stmt env s
   in
-  Label label1::res@ (Beqz (A0,label2)::s@[B label1;Label label2])
+  let test = [Lw(A0,Areg(0,SP));pop;Beqz (A0,label2)]
+  in
+  Label label1::res@ test @ s @ [B label1;Label label2]
   
 |Sfor (stl1,e,stl2,s) ->
   let stmt1 = List.concat (List.map (compile_stmt env) stl1)
@@ -237,18 +288,20 @@ match i.node with
   in
   let res = compile_expr env e
   in
+  let test = [Lw(A0,Areg(0,SP));pop;Beqz (A0,label2)]
+  in
   let core = compile_stmt env s
   in
-  stmt1@ (Label label1::res@ (Beqz (A0,label2) ::core@stmt2@[B label1;Label label2]))
+  stmt1@ ((Label label1)::res)@ test @ core@stmt2@[B label1;Label label2]
 
 |Sblock  block ->
   let changer = ref 0
   in 
   let env = List.fold_left 
     (fun env (t,id) -> 
-      let s = (get_size t) in 
-      changer := s + !changer ;
-      StrMap.add id.node  (!changer) env) env (fst block) 
+      let s =  !changer  in 
+      changer := s + (get_size t) ;
+      StrMap.add id.node s  env) env (fst block) 
   in
   let stm = List.map (compile_stmt env) (snd block)
   in
@@ -256,16 +309,22 @@ match i.node with
 
 |Sreturn r ->
   begin
+    let exit_code  =
+      [Lw(RA,Areg(0,FP));
+       Lw(FP,Areg(4,FP));       
+       Jr RA]
+    in
     match r with
     | Some s -> 
       let e = compile_expr env s 
       in
-      e@[Move (V0,A0);Lw(RA,Areg(0,FP));Binop(Sub,SP,SP,Oimm (0))] 
+      e@[Lw(V0,Areg(0,SP));pop]@exit_code 
     (* a mettre la taille de la frame*)
     | None -> 
-      [Lw(RA,Areg(0,FP));Binop(Sub,SP,SP,Oimm (0))]
+      exit_code
   (* a mettre la taille de la frame*)
   end
+
 
 
 (* vd signfi variable declaration *)
@@ -276,7 +335,7 @@ let recup_data vd = let ty = fst vd in
                       in
 		    match ty with 
 		    |Tint ->[lab;Dword [Int32.zero]]
-		    |Tchar ->[lab;Dbyte 1]
+		    |Tchar ->[lab;Dbyte 0]
 		    |Tstruct id|Tunion id ->
 		    begin
 		      let taille = get_size ty in
@@ -286,29 +345,33 @@ let recup_data vd = let ty = fst vd in
 
 
 let compile_block env  block = 
-  let frame = ref 0
+  let frame = ref 4
   in   
   let env = List.fold_left 
     (fun env (t,id) -> 
-      let s = (get_size t) in      
-      let env = StrMap.add id.node  (!frame) env 
+      let s = !frame  in      
+      let env = StrMap.add id.node (-s)  env
+      (* position par rapport fp est negatif *)
       in
-      frame := s + !frame; env ) env (fst block) 
+      frame := s + (get_size t); env ) env (fst block) 
   in
   let stm = List.fold_left (fun acc i -> acc ++(mips (compile_stmt env i))) nop (snd block)
   in
-   stm,!frame 
+   stm,( !frame -4) (*  je crois la taille de  frame !=  !frame *)
+
 
 let predfun = 
   let putchar =
-    let frame = Binop (Sub,SP,SP,Oimm 8)
-    in
-    let save =  [Sw (FP,Areg((-4),SP)); Binop (Add,FP,SP,Oimm(-8)); Sw (RA,Areg(0,FP));] 
-    in
     let label = Label "putchar"
     in
-    label::frame::save @
-      [Li (V0,11) ; Lbu (A0, Areg(8,FP));Syscall;Lw(RA,Areg(0,FP));Binop(Sub,SP,SP,Oimm (8));Jr RA ]
+    label::
+      [Lbu (A0, Areg(0,SP));
+       Li(V0,11);Syscall;
+      (* Lw(RA,Areg(0,FP));
+       Binop(Sub,SP,SP,Oimm (8));*)
+       Move (V0,A0) ;
+       Jr RA ]
+     (* [Lbu (A0, Areg(8,FP));Syscall;Lw(RA,Areg(0,FP));Binop(Sub,SP,SP,Oimm (8));Move (V0,A0) ;Jr RA ]*)
   in
   let sbrk = [ Label "sbrk" ]
   in
@@ -326,34 +389,52 @@ let compile_data prog = function
 | Dunion  (id, decls)  -> Hashtbl.add union_env  id.node decls;prog 
 
 | Dfun (t,id,dvl,infb) -> 
-  let () =
-    Hashtbl.add globfun id.node {retour = t; dvl = dvl} 
+  let label =   
+      mips [Label id.node]
   in
-  let label = mips [Label id.node] 
+  (* calcule des decalages d'arguments *)
+  let dec_args = ref 8
+  in 
+  let env = 
+    List.fold_right
+      (fun (t,id) env -> 
+        let s = !dec_args in
+        let () = dec_args := !dec_args + get_size(t) in
+        StrMap.add id.node s env)
+      dvl StrMap.empty 
   in
-  let core,tframe = compile_block StrMap.empty infb
+  (* compilation du core de la fonction *)
+  let core,tframe = compile_block env infb
   in
   let data = prog.data;
   in
-  let frame = mips [Binop (Sub,SP,SP,Oimm (tframe+8))]
+  let frame = mips [Binop (Sub,SP,SP,Oimm (tframe))]
   in
-  let save = mips [Sw (FP,Areg((4-tframe),SP)); Binop (Add,FP,SP,Oimm(8-tframe)); Sw (RA,Areg(0,FP));] 
+  let save = mips [push;
+                   Sw (FP,Areg((0),SP));
+                   push;
+                   Move(FP,SP);
+                   Sw (RA,Areg(0,FP));] 
   in
-  let code = prog.text ++ label ++ frame ++ save ++ core
+  let code = prog.text ++ label ++ save ++ frame ++ core
+  in  
+  let exit_code = mips [Binop(Add,SP,SP,Oimm (8+tframe))]
   in
-  let exit_code s =
-    if ((String.compare s "main") = 0 ) then
-     mips [Move (T1,V0);Li (V0,10);Syscall]
-    else mips [Jr RA]
-  in
-  {text = code ++ (exit_code id.node) ; data = data}
+  {text = code ++ exit_code ; data = data}
   
-
+let main =
+  mips
+  [
+    Label "main";    
+    Jal "prog_main";  
+    Li (V0,10);
+    Syscall
+  ]
 
 let compile_file ast = 
   try
     let sortie =List.fold_left (fun acc d -> compile_data acc d) prog  ast 
     in 
-    {text = sortie.text ++ predfun; data = sortie.data}
+    {text = main ++ sortie.text ++ predfun; data = sortie.data}
   with _ ->
     failwith !msg 
