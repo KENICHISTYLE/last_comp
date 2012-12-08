@@ -66,10 +66,7 @@ prog_main:
 	add  $sp, $sp, 4
 	sw   $v0, 0($sp)
 	add  $sp, $sp, 4
-	lw   $ra, 0($fp)
-	lw   $fp, 4($fp)
 	add  $sp, $sp, 20
-	jr   $ra
 putchar:
 	lbu   $a0, 0($sp)
 	li   $v0, 11

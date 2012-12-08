@@ -16,10 +16,15 @@ f:
 	lw   $a0, 0($sp)
 	seq  $a0, $zero, $a0
 	sw   $a0, 0($sp)
+	add  $sp, $sp, 4
 	bnez $a0, True_branch_1
-	b    False_branch_1
+	b    Fin_du_branch_1
 True_branch_1:
-False_branch_1:
+	lw   $ra, 0($fp)
+	lw   $fp, 4($fp)
+	add  $sp, $sp, 8
+	jr   $ra
+Fin_du_branch_1:
 	add  $sp, $sp, -4
 	sub  $sp, $sp, 4
 	lw   $a0, 20($fp)
@@ -79,10 +84,6 @@ prog_main:
 	add  $sp, $sp, 4
 	sw   $v0, 0($sp)
 	add  $sp, $sp, 4
-	lw   $ra, 0($fp)
-	lw   $fp, 4($fp)
-	add  $sp, $sp, 8
-	jr   $ra
 putchar:
 	lbu   $a0, 0($sp)
 	li   $v0, 11
@@ -90,5 +91,10 @@ putchar:
 	move $v0, $a0
 	jr   $ra
 sbrk:
+	li   $v0, 9
+	lw   $a0, 0($sp)
+	syscall
+	move $v0, $a0
+	jr   $ra
 	.data
 

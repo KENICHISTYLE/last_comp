@@ -1,15 +1,15 @@
-
-
-char c;
-
+/* void f(int x)
+{
+ x--;
+ if(x<0)return ;
+ f(x);
+ putchar(65+x);
+ 
+}
+*/
 int main()
 {
-int i;
-//for (i = 0; i < 5 ; i = i +1)	 
-	 putchar('r');
-	 putchar('1');
-	 putchar('2');
-	 putchar('3');
-	 putchar('4');
-return 1;
+putchar('A');
+
+return 0;
 }

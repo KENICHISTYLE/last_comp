@@ -156,7 +156,6 @@ end
       |Bmod -> Mips.Rem
       |Band -> Mips.Mul
       |Bor  -> Mips.Add
-      |_ -> assert false
     in
     let code_e1 = compile_expr env e1 in
     let code_e2 = compile_expr env e2 in
@@ -234,7 +233,7 @@ let get_nb_br nc =
   let () = incr nc in
   string_of_int !nc
 
-let rec compile_stmt env i =
+let rec compile_stmt env tframe i =
 match i.node with
 |Sskip -> []
 |Sexpr e -> let taille = get_size e.loc in
@@ -246,13 +245,16 @@ match i.node with
   in
   let label1 = "True_branch_"^n
   in
-  let label2 = "False_branch_"^n
+  let label2 = "Fin_du_branch_"^n
   in
-  let s1 = compile_stmt env s1
+  
+  let s1 = compile_stmt env tframe s1
   in
-  let s2 = compile_stmt env s2
+  let s2 = compile_stmt env tframe s2
   in
-  res@Bnez (A0,label1)::s2@ ( B label2::Label (label1)::s1@ [Label label2])
+  let test = [pop;Bnez (A0,label1)](* si il ya un pb rajouter le load dans a0 *)
+  in
+  res@test @ s2@ ( B label2::Label (label1)::s1@ [Label label2])
 
 |Swhile (e,s) ->
   let res = compile_expr env  e
@@ -263,14 +265,16 @@ match i.node with
   in
   let label2 = "loop_end_"^n
   in
-  let s = compile_stmt env s
+  let s = compile_stmt env tframe s
   in
-  Label label1::res@ (Beqz (A0,label2)::s@[B label1;Label label2])
+  let test = [Lw(A0,Areg(0,SP));pop;Beqz (A0,label2)]
+  in
+  Label label1::res@ test @ s @ [B label1;Label label2]
   
 |Sfor (stl1,e,stl2,s) ->
-  let stmt1 = List.concat (List.map (compile_stmt env) stl1)
+  let stmt1 = List.concat (List.map (compile_stmt env tframe) stl1)
   in
-  let stmt2 = List.concat (List.map (compile_stmt env) stl2)
+  let stmt2 = List.concat (List.map (compile_stmt env tframe) stl2)
   in
   let n = (get_nb_br loop_count)
   in
@@ -280,11 +284,13 @@ match i.node with
   in
   let res = compile_expr env e
   in
-  let core = compile_stmt env s
+  let test = [Lw(A0,Areg(0,SP));pop;Beqz (A0,label2)]
   in
-  stmt1@ (Label label1::res@ (Beqz (A0,label2) ::core@stmt2@[B label1;Label label2]))
+  let core = compile_stmt env tframe s
+  in
+  stmt1@ ((Label label1)::res)@ test @ core@stmt2@[B label1;Label label2]
 
-|Sblock  block ->
+|Sblock  block (*il faut compter les valeur a refaire !!!!!*)->
   let changer = ref 0
   in 
   let env = List.fold_left 
@@ -293,26 +299,32 @@ match i.node with
       changer := s + (get_size t) ;
       StrMap.add id.node s  env) env (fst block) 
   in
-  let stm = List.map (compile_stmt env) (snd block)
+  let stm = List.map (compile_stmt env tframe) (snd block)
   in
   List.concat stm 
 
-|Sreturn r ->
+|Sreturn r -> (*arefaire !!!!!*)
   begin
+    let exit_code  =
+      [Lw(RA,Areg(0,FP));
+       Lw(FP,Areg(4,FP)); 
+       Binop(Add,SP,SP,Oimm (8+tframe))             
+       ]
+    in
     match r with
     | Some s -> 
       let e = compile_expr env s 
       in
-      e@[Lw(V0,Areg(0,SP))] 
+      e@[Lw(V0,Areg(0,SP));pop]@ exit_code @ [Jr RA] 
     (* a mettre la taille de la frame*)
     | None -> 
-      []
+      exit_code @ [Jr RA]
   (* a mettre la taille de la frame*)
   end
 
 
 
-(* vd signfi variable declaration *)
+(* vd signfi variable declaration ------ a reffaire !!!!!!!!!*) 
 let recup_data vd = let ty = fst vd in
 		    let id = snd vd in
 		    let lab = Dlabel id.node in
@@ -335,34 +347,25 @@ let compile_block env  block =
   let env = List.fold_left 
     (fun env (t,id) -> 
       let s = !frame  in      
-      let env = StrMap.add id.node (-s)  env  (* position par rapport fp est negatif *)
+      let env = StrMap.add id.node (-s)  env
+      (* position par rapport fp est negatif *)
       in
       frame := s + (get_size t); env ) env (fst block) 
   in
-  let stm = List.fold_left (fun acc i -> acc ++(mips (compile_stmt env i))) nop (snd block)
+  let stm = List.fold_left (fun acc i -> acc ++(mips (compile_stmt env (!frame -4) i))) nop (snd block)
   in
    stm,( !frame -4) (*  je crois la taille de  frame !=  !frame *)
 
 
 let predfun = 
   let putchar =
-    let save = 
-      [push;
-        Sw (FP,Areg(0,SP));
-        push;
-        Move (FP,SP);
-        Sw (RA,Areg(0,FP));] 
-    in
     let label = Label "putchar"
     in
     label::
       [Lbu (A0, Areg(0,SP));
-       Li(V0,11);Syscall;
-      (* Lw(RA,Areg(0,FP));
-       Binop(Sub,SP,SP,Oimm (8));*)
+       Li(V0,11);Syscall;     
        Move (V0,A0) ;
-       Jr RA ]
-     (* [Lbu (A0, Areg(8,FP));Syscall;Lw(RA,Areg(0,FP));Binop(Sub,SP,SP,Oimm (8));Move (V0,A0) ;Jr RA ]*)
+       Jr RA ]    
   in
   let sbrk = [ Label "sbrk";Li(V0,9);Lw(A0,Areg(0,SP));Syscall;Move(V0,A0);Jr RA]
   in
@@ -407,11 +410,18 @@ let compile_data prog = function
                    Move(FP,SP);
                    Sw (RA,Areg(0,FP));] 
   in
-  let code = prog.text ++ label ++ save ++ frame ++ core
-  in
   let exit_code  =
-   mips [Lw(RA,Areg(0,FP));Lw(FP,Areg(4,FP));Binop(Add,SP,SP,Oimm (8+tframe));Jr RA]
+  if (t = Tvoid) then
+      mips [Lw(RA,Areg(0,FP));
+       Lw(FP,Areg(4,FP)); 
+       Binop(Add,SP,SP,Oimm (8+tframe));
+       Jr RA             
+       ]
+  else 
+        nop
   in
+  let code = prog.text ++ label ++ save ++ frame ++ core
+  in  
   {text = code ++ exit_code ; data = data}
   
 let main =

@@ -9,54 +9,23 @@ prog_main:
 	sub  $sp, $sp, 4
 	move $fp, $sp
 	sw   $ra, 0($fp)
-	sub  $sp, $sp, 4
+	sub  $sp, $sp, 0
 	add  $sp, $sp, -4
 	sub  $sp, $sp, 4
-	li   $a0, 114
-	sw   $a0, 0($sp)
-	jal  putchar
-	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
-	add  $sp, $sp, 4
-	add  $sp, $sp, -4
-	sub  $sp, $sp, 4
-	li   $a0, 49
-	sw   $a0, 0($sp)
-	jal  putchar
-	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
-	add  $sp, $sp, 4
-	add  $sp, $sp, -4
-	sub  $sp, $sp, 4
-	li   $a0, 50
-	sw   $a0, 0($sp)
-	jal  putchar
-	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
-	add  $sp, $sp, 4
-	add  $sp, $sp, -4
-	sub  $sp, $sp, 4
-	li   $a0, 51
-	sw   $a0, 0($sp)
-	jal  putchar
-	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
-	add  $sp, $sp, 4
-	add  $sp, $sp, -4
-	sub  $sp, $sp, 4
-	li   $a0, 52
+	li   $a0, 65
 	sw   $a0, 0($sp)
 	jal  putchar
 	add  $sp, $sp, 4
 	sw   $v0, 0($sp)
 	add  $sp, $sp, 4
 	sub  $sp, $sp, 4
-	li   $a0, 1
+	li   $a0, 0
 	sw   $a0, 0($sp)
 	lw   $v0, 0($sp)
+	add  $sp, $sp, 4
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
-	add  $sp, $sp, 12
+	add  $sp, $sp, 8
 	jr   $ra
 putchar:
 	lbu   $a0, 0($sp)
@@ -65,7 +34,10 @@ putchar:
 	move $v0, $a0
 	jr   $ra
 sbrk:
+	li   $v0, 9
+	lw   $a0, 0($sp)
+	syscall
+	move $v0, $a0
+	jr   $ra
 	.data
-c_1:
-	.byte 0
 

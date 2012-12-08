@@ -106,10 +106,7 @@ prog_main:
 	add  $sp, $sp, 4
 	sw   $v0, 0($sp)
 	add  $sp, $sp, 4
-	lw   $ra, 0($fp)
-	lw   $fp, 4($fp)
 	add  $sp, $sp, 8
-	jr   $ra
 putchar:
 	lbu   $a0, 0($sp)
 	li   $v0, 11
@@ -117,5 +114,10 @@ putchar:
 	move $v0, $a0
 	jr   $ra
 sbrk:
+	li   $v0, 9
+	lw   $a0, 0($sp)
+	syscall
+	move $v0, $a0
+	jr   $ra
 	.data
 
