@@ -501,7 +501,7 @@ let recup_data vd = let ty = fst vd in
                       in
 		    match ty with 
 		    |Tint ->[lab;Dword [Int32.zero]]
-		    |Tchar ->[lab;Dbyte 0]
+		    |Tchar ->[lab;Dbyte 1]
 		    |Tstruct id|Tunion id ->
 		    begin
 		      let taille = get_size ty in
