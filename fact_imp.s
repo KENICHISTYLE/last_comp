@@ -72,7 +72,8 @@ loop_end_1:
 	sub  $sp, $sp, 4
 	lw   $a0, -4($fp)
 	sw   $a0, 0($sp)
-	lw   $v0, 0($sp)
+	lw   $t0, 0($sp)
+	sw   $t0, 12($fp)
 	add  $sp, $sp, 4
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
@@ -91,7 +92,6 @@ prog_main:
 	sw   $a0, 0($sp)
 	jal  fact_imp
 	add  $sp, $sp, 0
-	sw   $v0, 0($sp)
 	sub  $sp, $sp, 4
 	li   $a0, 1
 	sw   $a0, 0($sp)
@@ -110,7 +110,6 @@ True_branch_1:
 	sw   $a0, 0($sp)
 	jal  putchar
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	add  $sp, $sp, 4
 Fin_du_branch_1:
 	add  $sp, $sp, -4
@@ -119,7 +118,6 @@ Fin_du_branch_1:
 	sw   $a0, 0($sp)
 	jal  fact_imp
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	sub  $sp, $sp, 4
 	li   $a0, 1
 	sw   $a0, 0($sp)
@@ -138,7 +136,6 @@ True_branch_2:
 	sw   $a0, 0($sp)
 	jal  putchar
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	add  $sp, $sp, 4
 Fin_du_branch_2:
 	add  $sp, $sp, -4
@@ -147,7 +144,6 @@ Fin_du_branch_2:
 	sw   $a0, 0($sp)
 	jal  fact_imp
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	sub  $sp, $sp, 4
 	li   $a0, 120
 	sw   $a0, 0($sp)
@@ -166,7 +162,6 @@ True_branch_3:
 	sw   $a0, 0($sp)
 	jal  putchar
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	add  $sp, $sp, 4
 Fin_du_branch_3:
 	add  $sp, $sp, -4
@@ -175,10 +170,14 @@ Fin_du_branch_3:
 	sw   $a0, 0($sp)
 	jal  putchar
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	add  $sp, $sp, 4
+	lw   $ra, 0($fp)
+	lw   $fp, 4($fp)
+	add  $sp, $sp, 8
+	jr   $ra
 putchar:
-	lbu   $a0, 0($sp)
+	lw   $a0, 0($sp)
+	sw   $a0, 4($sp)
 	li   $v0, 11
 	syscall
 	move $v0, $a0

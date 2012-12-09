@@ -10,9 +10,12 @@ strlen:
 	move $fp, $sp
 	sw   $ra, 0($fp)
 	sub  $sp, $sp, 4
+#begin block
+#deb gauche
 	sub  $sp, $sp, 4
 	add  $a0, $fp, -4
 	sw   $a0, 0($sp)
+#fin gauche
 	sub  $sp, $sp, 4
 	li   $a0, 0
 	sw   $a0, 0($sp)
@@ -23,12 +26,19 @@ strlen:
 	sw   $a1, 0($sp)
 	add  $sp, $sp, 4
 loop_start_1:
+#deb gauche
 	sub  $sp, $sp, 4
 	add  $a0, $fp, 8
 	sw   $a0, 0($sp)
+#fin gauche
 	sub  $sp, $sp, 4
-	lw   $a0, 8($fp)
+	add  $a0, $fp, 8
 	sw   $a0, 0($sp)
+	lw   $a0, 0($sp)
+	add  $sp, $sp, 4
+	sub  $sp, $sp, 4
+	lw   $a1, 0($a0)
+	sw   $a1, 0($sp)
 	lw   $a0, 0($sp)
 	add  $a0, $a0, 4
 	lw   $a1, 4($sp)
@@ -42,12 +52,19 @@ loop_start_1:
 	lw   $a0, 0($sp)
 	add  $sp, $sp, 4
 	beqz $a0, loop_end_1
+#deb gauche
 	sub  $sp, $sp, 4
 	add  $a0, $fp, -4
 	sw   $a0, 0($sp)
+#fin gauche
 	sub  $sp, $sp, 4
-	lw   $a0, -4($fp)
+	add  $a0, $fp, -4
 	sw   $a0, 0($sp)
+	lw   $a0, 0($sp)
+	add  $sp, $sp, 4
+	sub  $sp, $sp, 4
+	lw   $a1, 0($a0)
+	sw   $a1, 0($sp)
 	lw   $a0, 0($sp)
 	add  $a0, $a0, 1
 	lw   $a1, 4($sp)
@@ -59,14 +76,21 @@ loop_start_1:
 	b    loop_start_1
 loop_end_1:
 	sub  $sp, $sp, 4
-	lw   $a0, -4($fp)
+	add  $a0, $fp, -4
 	sw   $a0, 0($sp)
-	lw   $v0, 0($sp)
+	lw   $a0, 0($sp)
+	add  $sp, $sp, 4
+	sub  $sp, $sp, 4
+	lw   $a1, 0($a0)
+	sw   $a1, 0($sp)
+	lw   $t0, 0($sp)
+	sw   $t0, 12($fp)
 	add  $sp, $sp, 4
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
 	add  $sp, $sp, 12
 	jr   $ra
+#fin block
 print_int:
 	sub  $sp, $sp, 4
 	sw   $fp, 0($sp)
@@ -74,9 +98,15 @@ print_int:
 	move $fp, $sp
 	sw   $ra, 0($fp)
 	sub  $sp, $sp, 0
+#begin block
 	sub  $sp, $sp, 4
-	lw   $a0, 8($fp)
+	add  $a0, $fp, 8
 	sw   $a0, 0($sp)
+	lw   $a0, 0($sp)
+	add  $sp, $sp, 4
+	sub  $sp, $sp, 4
+	lw   $a1, 0($a0)
+	sw   $a1, 0($sp)
 	sub  $sp, $sp, 4
 	li   $a0, 9
 	sw   $a0, 0($sp)
@@ -89,10 +119,17 @@ print_int:
 	bnez $a0, True_branch_1
 	b    Fin_du_branch_1
 True_branch_1:
+#taille retour
 	add  $sp, $sp, 0
+#args 
 	sub  $sp, $sp, 4
-	lw   $a0, 8($fp)
+	add  $a0, $fp, 8
 	sw   $a0, 0($sp)
+	lw   $a0, 0($sp)
+	add  $sp, $sp, 4
+	sub  $sp, $sp, 4
+	lw   $a1, 0($a0)
+	sw   $a1, 0($sp)
 	sub  $sp, $sp, 4
 	li   $a0, 10
 	sw   $a0, 0($sp)
@@ -101,17 +138,25 @@ True_branch_1:
 	add  $sp, $sp, 4
 	div  $a0, $a0, $a1
 	sw   $a0, 0($sp)
+#args fin
 	jal  print_int
 	add  $sp, $sp, 4
 	add  $sp, $sp, 0
 Fin_du_branch_1:
+#taille retour
 	add  $sp, $sp, -4
+#args 
 	sub  $sp, $sp, 4
 	li   $a0, 48
 	sw   $a0, 0($sp)
 	sub  $sp, $sp, 4
-	lw   $a0, 8($fp)
+	add  $a0, $fp, 8
 	sw   $a0, 0($sp)
+	lw   $a0, 0($sp)
+	add  $sp, $sp, 4
+	sub  $sp, $sp, 4
+	lw   $a1, 0($a0)
+	sw   $a1, 0($sp)
 	sub  $sp, $sp, 4
 	li   $a0, 10
 	sw   $a0, 0($sp)
@@ -125,10 +170,11 @@ Fin_du_branch_1:
 	add  $sp, $sp, 4
 	add  $a0, $a0, $a1
 	sw   $a0, 0($sp)
+#args fin
 	jal  putchar
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	add  $sp, $sp, 4
+#fin block
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
 	add  $sp, $sp, 8
@@ -140,113 +186,155 @@ prog_main:
 	move $fp, $sp
 	sw   $ra, 0($fp)
 	sub  $sp, $sp, 0
+#begin block
+#taille retour
 	add  $sp, $sp, 0
+#args 
+#taille retour
 	add  $sp, $sp, -4
+#args 
 	sub  $sp, $sp, 4
-	la   $a0, 
+	la   $a0, String_const1
 	sw   $a0, 0($sp)
+#args fin
 	jal  strlen
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
+#args fin
 	jal  print_int
 	add  $sp, $sp, 4
 	add  $sp, $sp, 0
+#taille retour
 	add  $sp, $sp, -4
+#args 
 	sub  $sp, $sp, 4
 	li   $a0, 10
 	sw   $a0, 0($sp)
+#args fin
 	jal  putchar
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	add  $sp, $sp, 4
+#taille retour
 	add  $sp, $sp, 0
+#args 
+#taille retour
 	add  $sp, $sp, -4
+#args 
 	sub  $sp, $sp, 4
-	la   $a0, hello world
+	la   $a0, String_const2
 	sw   $a0, 0($sp)
+#args fin
 	jal  strlen
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
+#args fin
 	jal  print_int
 	add  $sp, $sp, 4
 	add  $sp, $sp, 0
+#taille retour
 	add  $sp, $sp, -4
+#args 
 	sub  $sp, $sp, 4
 	li   $a0, 10
 	sw   $a0, 0($sp)
+#args fin
 	jal  putchar
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	add  $sp, $sp, 4
+#taille retour
 	add  $sp, $sp, 0
+#args 
+#taille retour
 	add  $sp, $sp, -4
+#args 
 	sub  $sp, $sp, 4
-	la   $a0, hello world
-
+	la   $a0, String_const3
 	sw   $a0, 0($sp)
+#args fin
 	jal  strlen
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
+#args fin
 	jal  print_int
 	add  $sp, $sp, 4
 	add  $sp, $sp, 0
+#taille retour
 	add  $sp, $sp, -4
+#args 
 	sub  $sp, $sp, 4
 	li   $a0, 10
 	sw   $a0, 0($sp)
+#args fin
 	jal  putchar
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	add  $sp, $sp, 4
+#taille retour
 	add  $sp, $sp, 0
+#args 
+#taille retour
 	add  $sp, $sp, -4
+#args 
 	sub  $sp, $sp, 4
-	la   $a0, foo bar
+	la   $a0, String_const4
 	sw   $a0, 0($sp)
+#args fin
 	jal  strlen
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
+#args fin
 	jal  print_int
 	add  $sp, $sp, 4
 	add  $sp, $sp, 0
+#taille retour
 	add  $sp, $sp, -4
+#args 
 	sub  $sp, $sp, 4
 	li   $a0, 10
 	sw   $a0, 0($sp)
+#args fin
 	jal  putchar
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	add  $sp, $sp, 4
+#taille retour
 	add  $sp, $sp, 0
+#args 
+#taille retour
 	add  $sp, $sp, -4
+#args 
 	sub  $sp, $sp, 4
-	la   $a0, answer to the question of life, the uni...
+	la   $a0, String_const5
 	sw   $a0, 0($sp)
+#args fin
 	jal  strlen
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
+#args fin
 	jal  print_int
 	add  $sp, $sp, 4
 	add  $sp, $sp, 0
+#taille retour
 	add  $sp, $sp, -4
+#args 
 	sub  $sp, $sp, 4
 	li   $a0, 10
 	sw   $a0, 0($sp)
+#args fin
 	jal  putchar
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	add  $sp, $sp, 4
 	sub  $sp, $sp, 4
 	li   $a0, 0
 	sw   $a0, 0($sp)
-	lw   $v0, 0($sp)
+	lw   $t0, 0($sp)
+	sw   $t0, 8($fp)
 	add  $sp, $sp, 4
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
 	add  $sp, $sp, 8
 	jr   $ra
+#fin block
+	lw   $ra, 0($fp)
+	lw   $fp, 4($fp)
+	add  $sp, $sp, 8
+	jr   $ra
 putchar:
-	lbu   $a0, 0($sp)
+	lw   $a0, 0($sp)
+	sw   $a0, 4($sp)
 	li   $v0, 11
 	syscall
 	move $v0, $a0
@@ -255,7 +343,16 @@ sbrk:
 	li   $v0, 9
 	lw   $a0, 0($sp)
 	syscall
-	move $v0, $a0
 	jr   $ra
 	.data
+String_const1:
+	.asciiz "\\0"
+String_const2:
+	.asciiz "hello world\\0"
+String_const3:
+	.asciiz "hello world\n\\0"
+String_const4:
+	.asciiz "foo bar\\0"
+String_const5:
+	.asciiz "answer to the question of life, the uni...\\0"
 

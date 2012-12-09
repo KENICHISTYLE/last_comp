@@ -4,7 +4,6 @@ int main() {
   cpt = 0;
   for(i = 0; i < 10; i++) {
     int j;
-    int k;
     for (j = 10; j > 0; j--)
       ++cpt;
   }

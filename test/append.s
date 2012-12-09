@@ -61,7 +61,8 @@ loop_end_1:
 	sub  $sp, $sp, 4
 	lw   $a0, -4($fp)
 	sw   $a0, 0($sp)
-	lw   $v0, 0($sp)
+	lw   $t0, 0($sp)
+	sw   $t0, 12($fp)
 	add  $sp, $sp, 4
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
@@ -83,14 +84,12 @@ append:
 	sw   $a0, 0($sp)
 	jal  strlen
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	add  $sp, $sp, -4
 	sub  $sp, $sp, 4
 	lw   $a0, 8($fp)
 	sw   $a0, 0($sp)
 	jal  strlen
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -119,7 +118,6 @@ append:
 	sw   $a0, 0($sp)
 	jal  sbrk
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -281,7 +279,8 @@ loop_end_3:
 	sub  $sp, $sp, 4
 	lw   $a0, -9($fp)
 	sw   $a0, 0($sp)
-	lw   $v0, 0($sp)
+	lw   $t0, 0($sp)
+	sw   $t0, 16($fp)
 	add  $sp, $sp, 4
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
@@ -328,7 +327,6 @@ loop_start_4:
 	sw   $a0, 0($sp)
 	jal  putchar
 	add  $sp, $sp, 1
-	sw   $v0, 0($sp)
 	add  $sp, $sp, 4
 	b    loop_start_4
 loop_end_4:
@@ -356,7 +354,6 @@ print_endline:
 	sw   $a0, 0($sp)
 	jal  putchar
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	add  $sp, $sp, 4
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
@@ -379,7 +376,6 @@ prog_main:
 	sw   $a0, 0($sp)
 	jal  append
 	add  $sp, $sp, 8
-	sw   $v0, 0($sp)
 	jal  print_endline
 	add  $sp, $sp, 4
 	add  $sp, $sp, 0
@@ -393,7 +389,6 @@ prog_main:
 	sw   $a0, 0($sp)
 	jal  append
 	add  $sp, $sp, 8
-	sw   $v0, 0($sp)
 	jal  print_endline
 	add  $sp, $sp, 4
 	add  $sp, $sp, 0
@@ -411,24 +406,28 @@ prog_main:
 	sw   $a0, 0($sp)
 	jal  append
 	add  $sp, $sp, 8
-	sw   $v0, 0($sp)
 	jal  append
 	add  $sp, $sp, 8
-	sw   $v0, 0($sp)
 	jal  print_endline
 	add  $sp, $sp, 4
 	add  $sp, $sp, 0
 	sub  $sp, $sp, 4
 	li   $a0, 0
 	sw   $a0, 0($sp)
-	lw   $v0, 0($sp)
+	lw   $t0, 0($sp)
+	sw   $t0, 8($fp)
 	add  $sp, $sp, 4
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
 	add  $sp, $sp, 8
 	jr   $ra
+	lw   $ra, 0($fp)
+	lw   $fp, 4($fp)
+	add  $sp, $sp, 8
+	jr   $ra
 putchar:
-	lbu   $a0, 0($sp)
+	lw   $a0, 0($sp)
+	sw   $a0, 4($sp)
 	li   $v0, 11
 	syscall
 	move $v0, $a0

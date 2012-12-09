@@ -1,0 +1,10 @@
+cd test/
+
+echo "$1" + " compile"  
+   ../minic "$1.c" 
+
+echo "$1" + " execute"
+   
+   java -jar Mars_4_2.jar "$1.s"
+
+echo "*-------------------------------------------------------*"  

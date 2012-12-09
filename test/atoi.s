@@ -91,7 +91,8 @@ loop_end_1:
 	sub  $sp, $sp, 4
 	lw   $a0, -5($fp)
 	sw   $a0, 0($sp)
-	lw   $v0, 0($sp)
+	lw   $t0, 0($sp)
+	sw   $t0, 12($fp)
 	add  $sp, $sp, 4
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
@@ -113,7 +114,6 @@ test:
 	sw   $a0, 0($sp)
 	jal  atoi
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -127,7 +127,6 @@ test:
 	sw   $a0, 0($sp)
 	jal  putchar
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	add  $sp, $sp, 4
 	b    Fin_du_branch_1
 True_branch_1:
@@ -137,7 +136,6 @@ True_branch_1:
 	sw   $a0, 0($sp)
 	jal  putchar
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	add  $sp, $sp, 4
 Fin_du_branch_1:
 	lw   $ra, 0($fp)
@@ -187,19 +185,24 @@ prog_main:
 	sw   $a0, 0($sp)
 	jal  putchar
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	add  $sp, $sp, 4
 	sub  $sp, $sp, 4
 	li   $a0, 0
 	sw   $a0, 0($sp)
-	lw   $v0, 0($sp)
+	lw   $t0, 0($sp)
+	sw   $t0, 8($fp)
 	add  $sp, $sp, 4
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
 	add  $sp, $sp, 8
 	jr   $ra
+	lw   $ra, 0($fp)
+	lw   $fp, 4($fp)
+	add  $sp, $sp, 8
+	jr   $ra
 putchar:
-	lbu   $a0, 0($sp)
+	lw   $a0, 0($sp)
+	sw   $a0, 4($sp)
 	li   $v0, 11
 	syscall
 	move $v0, $a0

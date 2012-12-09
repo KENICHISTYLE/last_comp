@@ -21,7 +21,8 @@ add:
 	add  $sp, $sp, 4
 	add  $a0, $a0, $a1
 	sw   $a0, 0($sp)
-	lw   $v0, 0($sp)
+	lw   $t0, 0($sp)
+	sw   $t0, 16($fp)
 	add  $sp, $sp, 4
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
@@ -45,7 +46,8 @@ sub:
 	add  $sp, $sp, 4
 	sub  $a0, $a0, $a1
 	sw   $a0, 0($sp)
-	lw   $v0, 0($sp)
+	lw   $t0, 0($sp)
+	sw   $t0, 16($fp)
 	add  $sp, $sp, 4
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
@@ -105,7 +107,8 @@ mul:
 	add  $sp, $sp, 4
 	div  $a0, $a0, $a1
 	sw   $a0, 0($sp)
-	lw   $v0, 0($sp)
+	lw   $t0, 0($sp)
+	sw   $t0, 16($fp)
 	add  $sp, $sp, 4
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
@@ -165,7 +168,8 @@ div:
 	add  $sp, $sp, 4
 	div  $a0, $a0, $a1
 	sw   $a0, 0($sp)
-	lw   $v0, 0($sp)
+	lw   $t0, 0($sp)
+	sw   $t0, 16($fp)
 	add  $sp, $sp, 4
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
@@ -189,7 +193,8 @@ of_int:
 	add  $sp, $sp, 4
 	mul  $a0, $a0, $a1
 	sw   $a0, 0($sp)
-	lw   $v0, 0($sp)
+	lw   $t0, 0($sp)
+	sw   $t0, 12($fp)
 	add  $sp, $sp, 4
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
@@ -220,7 +225,8 @@ True_branch_1:
 	sub  $sp, $sp, 4
 	li   $a0, 1
 	sw   $a0, 0($sp)
-	lw   $v0, 0($sp)
+	lw   $t0, 0($sp)
+	sw   $t0, 28($fp)
 	add  $sp, $sp, 4
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
@@ -239,7 +245,6 @@ Fin_du_branch_1:
 	sw   $a0, 0($sp)
 	jal  mul
 	add  $sp, $sp, 8
-	sw   $v0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -258,7 +263,6 @@ Fin_du_branch_1:
 	sw   $a0, 0($sp)
 	jal  mul
 	add  $sp, $sp, 8
-	sw   $v0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -274,14 +278,12 @@ Fin_du_branch_1:
 	sw   $a0, 0($sp)
 	jal  add
 	add  $sp, $sp, 8
-	sw   $v0, 0($sp)
 	add  $sp, $sp, -4
 	sub  $sp, $sp, 4
 	li   $a0, 4
 	sw   $a0, 0($sp)
 	jal  of_int
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -294,7 +296,8 @@ True_branch_2:
 	sub  $sp, $sp, 4
 	li   $a0, 0
 	sw   $a0, 0($sp)
-	lw   $v0, 0($sp)
+	lw   $t0, 0($sp)
+	sw   $t0, 28($fp)
 	add  $sp, $sp, 4
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
@@ -329,13 +332,11 @@ Fin_du_branch_2:
 	sw   $a0, 0($sp)
 	jal  sub
 	add  $sp, $sp, 8
-	sw   $v0, 0($sp)
 	sub  $sp, $sp, 4
 	lw   $a0, 20($fp)
 	sw   $a0, 0($sp)
 	jal  add
 	add  $sp, $sp, 8
-	sw   $v0, 0($sp)
 	add  $sp, $sp, -4
 	add  $sp, $sp, -4
 	add  $sp, $sp, -4
@@ -344,7 +345,6 @@ Fin_du_branch_2:
 	sw   $a0, 0($sp)
 	jal  of_int
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	add  $sp, $sp, -4
 	sub  $sp, $sp, 4
 	lw   $a0, 12($fp)
@@ -354,20 +354,17 @@ Fin_du_branch_2:
 	sw   $a0, 0($sp)
 	jal  mul
 	add  $sp, $sp, 8
-	sw   $v0, 0($sp)
 	jal  mul
 	add  $sp, $sp, 8
-	sw   $v0, 0($sp)
 	sub  $sp, $sp, 4
 	lw   $a0, 16($fp)
 	sw   $a0, 0($sp)
 	jal  add
 	add  $sp, $sp, 8
-	sw   $v0, 0($sp)
 	jal  iter
 	add  $sp, $sp, 20
-	sw   $v0, 0($sp)
-	lw   $v0, 0($sp)
+	lw   $t0, 0($sp)
+	sw   $t0, 28($fp)
 	add  $sp, $sp, 4
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
@@ -396,18 +393,16 @@ inside:
 	sw   $a0, 0($sp)
 	jal  of_int
 	add  $sp, $sp, 0
-	sw   $v0, 0($sp)
 	add  $sp, $sp, -4
 	sub  $sp, $sp, 4
 	li   $a0, 0
 	sw   $a0, 0($sp)
 	jal  of_int
 	add  $sp, $sp, 0
-	sw   $v0, 0($sp)
 	jal  iter
 	add  $sp, $sp, 16
-	sw   $v0, 0($sp)
-	lw   $v0, 0($sp)
+	lw   $t0, 0($sp)
+	sw   $t0, 16($fp)
 	add  $sp, $sp, 4
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
@@ -432,7 +427,6 @@ run:
 	sw   $a0, 0($sp)
 	jal  of_int
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -448,7 +442,6 @@ run:
 	sw   $a0, 0($sp)
 	jal  of_int
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -468,7 +461,6 @@ run:
 	sw   $a0, 0($sp)
 	jal  sub
 	add  $sp, $sp, 8
-	sw   $v0, 0($sp)
 	add  $sp, $sp, -4
 	sub  $sp, $sp, 4
 	li   $a0, 2
@@ -483,10 +475,8 @@ run:
 	sw   $a0, 0($sp)
 	jal  of_int
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	jal  div
 	add  $sp, $sp, 8
-	sw   $v0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -505,7 +495,6 @@ run:
 	sw   $a0, 0($sp)
 	jal  of_int
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -521,7 +510,6 @@ run:
 	sw   $a0, 0($sp)
 	jal  of_int
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -541,17 +529,14 @@ run:
 	sw   $a0, 0($sp)
 	jal  sub
 	add  $sp, $sp, 8
-	sw   $v0, 0($sp)
 	add  $sp, $sp, -4
 	sub  $sp, $sp, 4
 	lw   $a0, 8($fp)
 	sw   $a0, 0($sp)
 	jal  of_int
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	jal  div
 	add  $sp, $sp, 8
-	sw   $v0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -590,7 +575,7 @@ loop_start_1:
 	add  $sp, $sp, 4
 	beqz $a0, loop_end_1
 	sub  $sp, $sp, 4
-	add  $a0, $fp, 4
+	add  $a0, $fp, 32
 	sw   $a0, 0($sp)
 	add  $sp, $sp, -4
 	sub  $sp, $sp, 4
@@ -603,16 +588,13 @@ loop_start_1:
 	sw   $a0, 0($sp)
 	jal  of_int
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	sub  $sp, $sp, 4
 	lw   $a0, -8($fp)
 	sw   $a0, 0($sp)
 	jal  mul
 	add  $sp, $sp, 8
-	sw   $v0, 0($sp)
 	jal  add
 	add  $sp, $sp, 8
-	sw   $v0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -620,11 +602,11 @@ loop_start_1:
 	sw   $a1, 0($sp)
 	add  $sp, $sp, 4
 	sub  $sp, $sp, 4
-	lw   $a0, 0($fp)
+	lw   $a0, 28($fp)
 	sw   $a0, 0($sp)
 	add  $sp, $sp, 4
 	sub  $sp, $sp, 4
-	add  $a0, $fp, 0
+	add  $a0, $fp, 28
 	sw   $a0, 0($sp)
 	sub  $sp, $sp, 4
 	li   $a0, 0
@@ -637,7 +619,7 @@ loop_start_1:
 	add  $sp, $sp, 4
 loop_start_2:
 	sub  $sp, $sp, 4
-	lw   $a0, 0($fp)
+	lw   $a0, 28($fp)
 	sw   $a0, 0($sp)
 	sub  $sp, $sp, 4
 	li   $a0, 2
@@ -659,7 +641,7 @@ loop_start_2:
 	add  $sp, $sp, 4
 	beqz $a0, loop_end_2
 	sub  $sp, $sp, 4
-	add  $a0, $fp, 0
+	add  $a0, $fp, 28
 	sw   $a0, 0($sp)
 	add  $sp, $sp, -4
 	sub  $sp, $sp, 4
@@ -668,20 +650,17 @@ loop_start_2:
 	add  $sp, $sp, -4
 	add  $sp, $sp, -4
 	sub  $sp, $sp, 4
-	lw   $a0, 0($fp)
+	lw   $a0, 28($fp)
 	sw   $a0, 0($sp)
 	jal  of_int
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	sub  $sp, $sp, 4
 	lw   $a0, -20($fp)
 	sw   $a0, 0($sp)
 	jal  mul
 	add  $sp, $sp, 8
-	sw   $v0, 0($sp)
 	jal  add
 	add  $sp, $sp, 8
-	sw   $v0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -690,14 +669,13 @@ loop_start_2:
 	add  $sp, $sp, 4
 	add  $sp, $sp, -4
 	sub  $sp, $sp, 4
-	lw   $a0, 0($fp)
+	lw   $a0, 28($fp)
 	sw   $a0, 0($sp)
 	sub  $sp, $sp, 4
-	lw   $a0, 4($fp)
+	lw   $a0, 32($fp)
 	sw   $a0, 0($sp)
 	jal  inside
 	add  $sp, $sp, 8
-	sw   $v0, 0($sp)
 	add  $sp, $sp, 4
 	bnez $a0, True_branch_3
 	add  $sp, $sp, -4
@@ -706,7 +684,6 @@ loop_start_2:
 	sw   $a0, 0($sp)
 	jal  putchar
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	add  $sp, $sp, 4
 	b    Fin_du_branch_3
 True_branch_3:
@@ -716,14 +693,13 @@ True_branch_3:
 	sw   $a0, 0($sp)
 	jal  putchar
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	add  $sp, $sp, 4
 Fin_du_branch_3:
 	sub  $sp, $sp, 4
-	add  $a0, $fp, 0
+	add  $a0, $fp, 28
 	sw   $a0, 0($sp)
 	sub  $sp, $sp, 4
-	lw   $a0, 0($fp)
+	lw   $a0, 28($fp)
 	sw   $a0, 0($sp)
 	lw   $a0, 0($sp)
 	add  $a0, $a0, 1
@@ -741,7 +717,6 @@ loop_end_2:
 	sw   $a0, 0($sp)
 	jal  putchar
 	add  $sp, $sp, 4
-	sw   $v0, 0($sp)
 	add  $sp, $sp, 4
 	sub  $sp, $sp, 4
 	add  $a0, $fp, -4
@@ -777,8 +752,13 @@ prog_main:
 	jal  run
 	add  $sp, $sp, 4
 	add  $sp, $sp, 0
+	lw   $ra, 0($fp)
+	lw   $fp, 4($fp)
+	add  $sp, $sp, 8
+	jr   $ra
 putchar:
-	lbu   $a0, 0($sp)
+	lw   $a0, 0($sp)
+	sw   $a0, 4($sp)
 	li   $v0, 11
 	syscall
 	move $v0, $a0
