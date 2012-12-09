@@ -142,5 +142,5 @@ sbrk:
 	jr   $ra
 	.data
 String_const1:
-	.asciiz "hello world\\0"
+	.asciiz "hello world0"
 

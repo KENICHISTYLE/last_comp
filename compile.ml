@@ -186,16 +186,17 @@ match e.node with
       |Cint i -> [push;Li(A0,Int32.to_int i);Sw(A0,Areg(0,SP))]
       |Cstring s -> 
 	begin
-	  let label = (ajouter_string [(Dasciiz( s^"\\0"))]) in
+	  let label = (ajouter_string [(Dasciiz( s^"0"))]) in
 	  [push;
 	   La(A0,label);
 	   Sw(A0,Areg(0,SP))]
 	end
   end    
-
+    
 |Eassign (e1,e2) ->
   begin
-    let r2 = compile_expr env e2
+    let r2 = [Comment "partie2 de affect \n"] @ (compile_expr env e2)
+      @ [Comment "partie2 de affect fin \n"] 
     in
     let r1 = compile_gauche env e1
     in
@@ -237,16 +238,16 @@ match e.node with
 	if not (Hashtbl.mem genv x.node) then raise Haha;
 	[push;La(A0,x.node);Sw(A0,Areg(0,SP))]
     end
-      in
+    in
     addrese@[Lw(A0,Areg(0,SP));pop]@ [(pushn (arrondir_4 taille))]@(push_s_t 0 taille 0)
-    (* begin
-       try
-       let fp = StrMap.find x.node env in
-       [push;Lw(A0,Areg(fp,FP));Sw(A0,Areg(0,SP))]
-       with Not_found ->
-       if not (Hashtbl.mem genv x.node) then raise Haha;
-       [push;Lw(A0,Alab x.node);Sw(A0,Areg(0,SP))]
-       end*)
+  (* begin
+     try
+     let fp = StrMap.find x.node env in
+     [push;Lw(A0,Areg(fp,FP));Sw(A0,Areg(0,SP))]
+     with Not_found ->
+     if not (Hashtbl.mem genv x.node) then raise Haha;
+     [push;Lw(A0,Alab x.node);Sw(A0,Areg(0,SP))]
+     end*)
   end
 
 |Ebinop (op,e1,e2) ->
@@ -525,7 +526,7 @@ let compile_block env (t_fun,dec_args) block =
   let stm = 
     List.fold_left 
       (fun acc i -> 
-	acc ++(mips (compile_stmt env (!frame -4) (t_fun,dec_args) i))
+	acc ++(mips(compile_stmt env (!frame -4) (t_fun,dec_args) i))
       ) nop (snd block)
   in
    stm ++ mips [Comment "fin block"],( !frame -4) (*  je crois la taille de  frame !=  !frame *)
@@ -595,7 +596,7 @@ let compile_data prog = function
       mips 
 	[Lw(RA,Areg(0,FP));
 	 Lw(FP,Areg(4,FP)); 
-	 Binop(Add,SP,SP,Oimm (8+tframe));
+	 Binop(Add,SP,SP,Oimm (8+ arrondir_4 tframe));
 	 Jr RA             
 	]
     else 

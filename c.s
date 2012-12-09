@@ -16,9 +16,13 @@ prog_main:
 	add  $a0, $fp, -4
 	sw   $a0, 0($sp)
 #fin gauche
+#partie2 de affect 
+
 	sub  $sp, $sp, 4
 	li   $a0, 49
 	sw   $a0, 0($sp)
+#partie2 de affect fin 
+
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
