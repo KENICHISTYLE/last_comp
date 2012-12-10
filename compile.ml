@@ -297,7 +297,7 @@ match e.node with
 	get_size x	  
       else 1 
     in
-    let mul_point = [Binop(Mul,A0,A0,Oimm nombre);Sw(A0,Areg(0,SP))] in
+    let mul_point = [Lw(A0,Areg(0,SP));Binop(Mul,A0,A0,Oimm nombre);Sw(A0,Areg(0,SP))] in
     [Comment "deb binop"]@ code_e1 @ code_e2 @ mul_point@
       [Lw(A0,Areg(4,SP));
        Lw(A1,Areg(0,SP));
@@ -493,6 +493,8 @@ match i.node with
   stmt1@ ((Label label1)::res)@ test @ core@stmt2@[B label1;Label label2]
 
 |Sblock  block (*il faut compter les valeur a refaire !!!!!*)->
+  fst (compile_block env (t_fun,dec_args) block)  
+(*
   let changer = ref (tframe+4)
   in 
   let env = List.fold_left 
@@ -508,7 +510,7 @@ match i.node with
       Binop(Add,SP,SP,Oimm(!changer - tframe - 4 ));
      
       Comment "Block supprimer"] 
-    
+*)  
 |Sreturn r -> 
   begin
     let exit_code  =
@@ -529,6 +531,25 @@ match i.node with
   end
 
 
+and compile_block env (t_fun,dec_args) block = 
+  let frame = ref 4
+  in   
+  let env = List.fold_left 
+    (fun env (t,id) -> 
+      let s = !frame  in      
+      let env = StrMap.add id.node (-s)  env
+      (* position par rapport fp est negatif *)
+      in
+      frame := s + arrondir_4 (get_size t); env ) env (fst block) 
+  in
+  let stm = 
+    List.fold_left 
+      (fun acc i -> 
+	acc @ ((compile_stmt env (!frame -4) (t_fun,dec_args) i))
+      ) [] (snd block)
+  in
+   stm @ [Comment "fin block"],( !frame -4) 
+
 
 (* vd signfi variable declaration ------ a reffaire !!!!!!!!!*) 
 let recup_data vd = let ty = fst vd in
@@ -547,27 +568,6 @@ let recup_data vd = let ty = fst vd in
 		    |Tpointer cy ->[lab;Daddress id.node]
 		    |Tnull|Tvoid -> [] 
 		    
-
-
-let compile_block env (t_fun,dec_args) block = 
-  let frame = ref 4
-  in   
-  let env = List.fold_left 
-    (fun env (t,id) -> 
-      let s = !frame  in      
-      let env = StrMap.add id.node (-s)  env
-      (* position par rapport fp est negatif *)
-      in
-      frame := s + arrondir_4 (get_size t); env ) env (fst block) 
-  in
-  let stm = 
-    List.fold_left 
-      (fun acc i -> 
-	acc ++(mips(compile_stmt env (!frame -4) (t_fun,dec_args) i))
-      ) nop (snd block)
-  in
-   stm ++ mips [Comment "fin block"],( !frame -4) 
-
 let predfun = 
   let putchar =
     let label = Label "putchar"
@@ -594,7 +594,7 @@ let compile_data prog = function
 |Dvars dvl -> 
   let res1 = List.map (fun v -> recup_data v ) dvl in
   let res =List.concat res1
-  in {text = prog.text ; data = res}
+  in {text = prog.text ; data = prog.data @ res}
 
 | Dstruct (id, decls)  -> Hashtbl.add struct_env id.node decls;prog
 
@@ -639,7 +639,7 @@ let compile_data prog = function
     else 
       nop
   in
-  let code = prog.text ++ label ++ save ++ frame ++ core
+  let code = prog.text ++ label ++ save ++ frame ++ (mips core)
   in  
   {text = code ++ exit_code ; data = data}
   
