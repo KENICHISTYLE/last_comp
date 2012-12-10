@@ -215,6 +215,8 @@ match e.node with
     in
     let r1 = compile_gauche env e1
     in
+    let taille = get_size e.loc in
+    let decalage = arrondir_4 (get_size e2.loc) in
     let st = 
       match e1.loc with
       (* |Tchar ->
@@ -232,7 +234,7 @@ match e.node with
 	   Sw(A1,Areg(0,A0));
 	   Sw(A1,Areg(0,SP))
 	  ] @ [Comment "partie2 de affect fin \n"] 
-	|_ ->[]
+	|_ ->[Lw(A1,Areg(decalage,SP));Move(A0,SP)]@( lire taille 0)@[Move(A0,A1);pop;Move(A1,SP)]@(lire taille 0)
     in
     r1@r2@st
   end
@@ -428,9 +430,9 @@ match t with
 *)
 let save_result t args_dec = 
 match t with 
-  |Tint|Tnull|Tpointer _ -> [Lw(T0,Areg(0,SP));Sw(T0,Areg(args_dec+4,FP));pop]
+  |Tint|Tnull|Tpointer _ -> [Lw(T0,Areg(0,SP));Sw(T0,Areg(args_dec,FP));pop]
 
-  |Tchar -> [Lbu(T0,Areg(0,SP));Sb(T0,Areg(args_dec+1,FP));Binop(Add,SP,SP,Oimm 1)]
+  |Tchar -> [Lbu(T0,Areg(0,SP));Sb(T0,Areg(args_dec,FP));pop]
 
   |Tvoid -> []
 
@@ -444,8 +446,11 @@ match t with
     end
 
   |Tunion uid ->
+    let taille = get_size t in
     let s = Hashtbl.find union_size in
-    assert false (* a revoir*)
+    [Move(A1,FP);Binop(Add,A1,A1,Oimm args_dec);Move(A0,SP)]
+@( lire taille 0)@[ popn ( arrondir_4 taille) ]
+(* a revoir*)
 (*----------------------------------------------------------------------------------------*)
 (* compilation d'instructions *)
 let rec compile_stmt env tframe (t_fun,dec_args) i =
