@@ -123,6 +123,7 @@ prog_main:
 	jal  putchar
 	add  $sp, $sp, 4
 	add  $sp, $sp, 4
+	add  $sp, $sp, 8
 	b    Fin_du_branch_1
 True_branch_1:
 #deb gauche
@@ -158,6 +159,7 @@ True_branch_1:
 #id fin fin
 #args fin
 	jal  putchar
+	add  $sp, $sp, 4
 	add  $sp, $sp, 4
 	add  $sp, $sp, 4
 Fin_du_branch_1:
@@ -204,6 +206,7 @@ sbrk:
 	li   $v0, 9
 	lw   $a0, 0($sp)
 	syscall
+	sw   $v0, 4($sp)
 	jr   $ra
 	.data
 

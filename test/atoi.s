@@ -64,7 +64,7 @@ loop_start_1:
 	add  $sp, $sp, 4
 	lw   $a0, 0($sp)
 	lbu   $a0, 0($a0)
-	sb   $a0, 0($sp)
+	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -98,6 +98,8 @@ loop_start_1:
 	lw   $a1, 0($a0)
 	sw   $a1, 0($sp)
 #id fin fin
+	mul  $a0, $a0, 1
+	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -114,6 +116,8 @@ loop_start_1:
 	lbu   $a1, 0($a0)
 	sb   $a1, 0($sp)
 #id fin fin
+	mul  $a0, $a0, 1
+	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -122,6 +126,8 @@ loop_start_1:
 #fin binop
 	sub  $sp, $sp, 4
 	li   $a0, 48
+	sw   $a0, 0($sp)
+	mul  $a0, $a0, 1
 	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
@@ -193,6 +199,8 @@ test:
 #args fin
 	jal  atoi
 	add  $sp, $sp, 4
+	mul  $a0, $a0, 1
+	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -322,6 +330,7 @@ sbrk:
 	li   $v0, 9
 	lw   $a0, 0($sp)
 	syscall
+	sw   $v0, 4($sp)
 	jr   $ra
 	.data
 String_const1:
