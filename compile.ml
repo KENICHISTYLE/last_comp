@@ -86,10 +86,10 @@ and get_size  = function
   |Tint |Tpointer _ ->4
     
   |Tunion y ->
-    (find_s_size get_struct_size y.node)
+    (find_u_size get_union_size y.node)
   
   |Tstruct y  ->
-    (find_u_size get_union_size y.node)
+    (find_s_size get_struct_size y.node)
       
   |_ -> 0 (*on va rattraper les autres cas *)
     
@@ -589,16 +589,18 @@ let predfun =
   in
   mips (putchar @ sbrk)
 
+let compile_st_un prog = function  
+  | Dstruct (id, decls)  -> Hashtbl.add struct_env id.node decls;prog
+    
+  | Dunion  (id, decls)  -> Hashtbl.add union_env  id.node decls;prog 
+
+  | _ -> prog
 
 let compile_data prog = function
 |Dvars dvl -> 
   let res1 = List.map (fun v -> recup_data v ) dvl in
   let res =List.concat res1
   in {text = prog.text ; data = prog.data @ res}
-
-| Dstruct (id, decls)  -> Hashtbl.add struct_env id.node decls;prog
-
-| Dunion  (id, decls)  -> Hashtbl.add union_env  id.node decls;prog 
 
 | Dfun (t,id,dvl,infb) -> 
   let label =   
@@ -642,7 +644,9 @@ let compile_data prog = function
   let code = prog.text ++ label ++ save ++ frame ++ (mips core)
   in  
   {text = code ++ exit_code ; data = data}
-  
+
+| _ -> prog
+
 let main =
   mips
   [
@@ -654,6 +658,8 @@ let main =
 
 let compile_file ast = 
   try
+    let sortie =List.fold_left (fun acc d -> compile_st_un acc d) prog  ast 
+    in 
     let sortie =List.fold_left (fun acc d -> compile_data acc d) prog  ast 
     in 
     {text = main ++ sortie.text ++ predfun; data = sortie.data @ !string_const}
