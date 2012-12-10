@@ -16,30 +16,44 @@ prog_main:
 	add  $a0, $fp, -8
 	sw   $a0, 0($sp)
 #fin gauche
+#partie2 de affect 
+
 	sub  $sp, $sp, 4
 	la   $a0, String_const1
 	sw   $a0, 0($sp)
+#const str fin 
+
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
 	sw   $a1, 0($a0)
 	sw   $a1, 0($sp)
+#partie2 de affect fin 
+
 	add  $sp, $sp, 4
 #deb gauche
 	sub  $sp, $sp, 4
 	add  $a0, $fp, -4
 	sw   $a0, 0($sp)
 #fin gauche
+#partie2 de affect 
+
 	sub  $sp, $sp, 4
 	li   $a0, 0
 	sw   $a0, 0($sp)
+#null fin 
+
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
 	sw   $a1, 0($a0)
 	sw   $a1, 0($sp)
+#partie2 de affect fin 
+
 	add  $sp, $sp, 4
 loop_start_1:
+#deb binop
+#id deb
 	sub  $sp, $sp, 4
 	add  $a0, $fp, -4
 	sw   $a0, 0($sp)
@@ -48,6 +62,7 @@ loop_start_1:
 	sub  $sp, $sp, 4
 	lw   $a1, 0($a0)
 	sw   $a1, 0($sp)
+#id fin fin
 	sub  $sp, $sp, 4
 	li   $a0, 11
 	sw   $a0, 0($sp)
@@ -56,13 +71,17 @@ loop_start_1:
 	add  $sp, $sp, 4
 	slt  $a0, $a0, $a1
 	sw   $a0, 0($sp)
+#fin binop
 	lw   $a0, 0($sp)
 	add  $sp, $sp, 4
 	beqz $a0, loop_end_1
 #taille retour
 	add  $sp, $sp, -4
 #args 
+#deb binop
+#id deb
 	sub  $sp, $sp, 4
+	lw   $a0, -8($fp)
 	add  $a0, $fp, -8
 	sw   $a0, 0($sp)
 	lw   $a0, 0($sp)
@@ -70,6 +89,8 @@ loop_start_1:
 	sub  $sp, $sp, 4
 	lw   $a1, 0($a0)
 	sw   $a1, 0($sp)
+#id fin fin
+#id deb
 	sub  $sp, $sp, 4
 	add  $a0, $fp, -4
 	sw   $a0, 0($sp)
@@ -78,14 +99,16 @@ loop_start_1:
 	sub  $sp, $sp, 4
 	lw   $a1, 0($a0)
 	sw   $a1, 0($sp)
+#id fin fin
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
 	add  $a0, $a0, $a1
 	sw   $a0, 0($sp)
+#fin binop
 	lw   $a0, 0($sp)
-	lw   $a0, 0($a0)
-	sw   $a0, 0($sp)
+	lbu   $a0, 0($a0)
+	sb   $a0, 0($sp)
 #args fin
 	jal  putchar
 	add  $sp, $sp, 4
@@ -95,6 +118,7 @@ loop_start_1:
 	add  $a0, $fp, -4
 	sw   $a0, 0($sp)
 #fin gauche
+#id deb
 	sub  $sp, $sp, 4
 	add  $a0, $fp, -4
 	sw   $a0, 0($sp)
@@ -103,6 +127,7 @@ loop_start_1:
 	sub  $sp, $sp, 4
 	lw   $a1, 0($a0)
 	sw   $a1, 0($sp)
+#id fin fin
 	lw   $a0, 0($sp)
 	add  $a0, $a0, 1
 	lw   $a1, 4($sp)
@@ -142,5 +167,5 @@ sbrk:
 	jr   $ra
 	.data
 String_const1:
-	.asciiz "hello world0"
+	.asciiz "hello world"
 

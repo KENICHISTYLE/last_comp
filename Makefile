@@ -88,7 +88,7 @@ $(EXEC).opt: $(OPTOBJS)
 	$(CAMLYACC) $<
 
 clean:
-	rm -f *.cm[iox] *~ .*~ *.o
+	rm -f *.cm[iox] *~ .*~ *.o *.s *.*~
 	rm -f $(SRC_MLL:.mll=.ml) $(SRC_MLY:.mly=.ml) $(SRC_MLY:.mly=.mli)
 	rm -f $(EXEC)
 	rm -f $(EXEC).opt

@@ -11,10 +11,12 @@ int f(int x)
 int main()
 {
 //int i;
-char c;
+int c;
+int * t;
+t = &c;
 c = '1';
 //i = f(26);
-putchar(c);
+putchar(*t);
 //i = putchar(26 + i);
 //putchar (25 + i);
 //putchar(c);

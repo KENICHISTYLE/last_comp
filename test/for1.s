@@ -16,30 +16,44 @@ prog_main:
 	add  $a0, $fp, -4
 	sw   $a0, 0($sp)
 #fin gauche
+#partie2 de affect 
+
 	sub  $sp, $sp, 4
 	li   $a0, 0
 	sw   $a0, 0($sp)
+#null fin 
+
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
 	sw   $a1, 0($a0)
 	sw   $a1, 0($sp)
+#partie2 de affect fin 
+
 	add  $sp, $sp, 4
 #deb gauche
 	sub  $sp, $sp, 4
 	add  $a0, $fp, -8
 	sw   $a0, 0($sp)
 #fin gauche
+#partie2 de affect 
+
 	sub  $sp, $sp, 4
 	li   $a0, 0
 	sw   $a0, 0($sp)
+#null fin 
+
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
 	sw   $a1, 0($a0)
 	sw   $a1, 0($sp)
+#partie2 de affect fin 
+
 	add  $sp, $sp, 4
 loop_start_1:
+#deb binop
+#id deb
 	sub  $sp, $sp, 4
 	add  $a0, $fp, -8
 	sw   $a0, 0($sp)
@@ -48,6 +62,7 @@ loop_start_1:
 	sub  $sp, $sp, 4
 	lw   $a1, 0($a0)
 	sw   $a1, 0($sp)
+#id fin fin
 	sub  $sp, $sp, 4
 	li   $a0, 10
 	sw   $a0, 0($sp)
@@ -56,6 +71,7 @@ loop_start_1:
 	add  $sp, $sp, 4
 	slt  $a0, $a0, $a1
 	sw   $a0, 0($sp)
+#fin binop
 	lw   $a0, 0($sp)
 	add  $sp, $sp, 4
 	beqz $a0, loop_end_1
@@ -64,6 +80,8 @@ loop_start_1:
 	add  $a0, $fp, 12
 	sw   $a0, 0($sp)
 #fin gauche
+#partie2 de affect 
+
 	sub  $sp, $sp, 4
 	li   $a0, 10
 	sw   $a0, 0($sp)
@@ -72,8 +90,12 @@ loop_start_1:
 	add  $sp, $sp, 4
 	sw   $a1, 0($a0)
 	sw   $a1, 0($sp)
+#partie2 de affect fin 
+
 	add  $sp, $sp, 4
 loop_start_2:
+#deb binop
+#id deb
 	sub  $sp, $sp, 4
 	add  $a0, $fp, 12
 	sw   $a0, 0($sp)
@@ -82,14 +104,18 @@ loop_start_2:
 	sub  $sp, $sp, 4
 	lw   $a1, 0($a0)
 	sw   $a1, 0($sp)
+#id fin fin
 	sub  $sp, $sp, 4
 	li   $a0, 0
 	sw   $a0, 0($sp)
+#null fin 
+
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
 	sgt  $a0, $a0, $a1
 	sw   $a0, 0($sp)
+#fin binop
 	lw   $a0, 0($sp)
 	add  $sp, $sp, 4
 	beqz $a0, loop_end_2
@@ -98,6 +124,7 @@ loop_start_2:
 	add  $a0, $fp, -4
 	sw   $a0, 0($sp)
 #fin gauche
+#id deb
 	sub  $sp, $sp, 4
 	add  $a0, $fp, -4
 	sw   $a0, 0($sp)
@@ -106,6 +133,7 @@ loop_start_2:
 	sub  $sp, $sp, 4
 	lw   $a1, 0($a0)
 	sw   $a1, 0($sp)
+#id fin fin
 	lw   $a0, 0($sp)
 	add  $a0, $a0, 1
 	lw   $a1, 4($sp)
@@ -118,6 +146,7 @@ loop_start_2:
 	add  $a0, $fp, 12
 	sw   $a0, 0($sp)
 #fin gauche
+#id deb
 	sub  $sp, $sp, 4
 	add  $a0, $fp, 12
 	sw   $a0, 0($sp)
@@ -126,6 +155,7 @@ loop_start_2:
 	sub  $sp, $sp, 4
 	lw   $a1, 0($a0)
 	sw   $a1, 0($sp)
+#id fin fin
 	lw   $a0, 0($sp)
 	sub  $a0, $a0, 1
 	lw   $a1, 4($sp)
@@ -141,6 +171,7 @@ loop_end_2:
 	add  $a0, $fp, -8
 	sw   $a0, 0($sp)
 #fin gauche
+#id deb
 	sub  $sp, $sp, 4
 	add  $a0, $fp, -8
 	sw   $a0, 0($sp)
@@ -149,6 +180,7 @@ loop_end_2:
 	sub  $sp, $sp, 4
 	lw   $a1, 0($a0)
 	sw   $a1, 0($sp)
+#id fin fin
 	lw   $a0, 0($sp)
 	add  $a0, $a0, 1
 	lw   $a1, 4($sp)
@@ -159,6 +191,8 @@ loop_end_2:
 	add  $sp, $sp, 4
 	b    loop_start_1
 loop_end_1:
+#deb binop
+#id deb
 	sub  $sp, $sp, 4
 	add  $a0, $fp, -4
 	sw   $a0, 0($sp)
@@ -167,6 +201,7 @@ loop_end_1:
 	sub  $sp, $sp, 4
 	lw   $a1, 0($a0)
 	sw   $a1, 0($sp)
+#id fin fin
 	sub  $sp, $sp, 4
 	li   $a0, 100
 	sw   $a0, 0($sp)
@@ -175,6 +210,7 @@ loop_end_1:
 	add  $sp, $sp, 4
 	seq  $a0, $a0, $a1
 	sw   $a0, 0($sp)
+#fin binop
 	add  $sp, $sp, 4
 	bnez $a0, True_branch_1
 	b    Fin_du_branch_1

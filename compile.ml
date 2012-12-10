@@ -17,6 +17,8 @@ let (genv : (string ,unit) Hashtbl.t) = Hashtbl.create 1007
 
 let data_list = []
 
+let arrondir_4 x = ((x+3)/4)*4
+
 (* trouvez la taille d'une union dans l'environement *)
 (**
  f : fonction qui calcule la taille
@@ -63,20 +65,20 @@ let rec get_struct_size s =
 	      acc +1 
 		
             |Tint | Tpointer _ -> 
-	      (acc+(acc mod 4)) + 4
+	      (arrondir_4 acc) + 4
 		
 	    |Tstruct sid ->
-              (acc+(acc mod 4)) + (find_s_size get_struct_size sid.node)
+              (arrondir_4 acc) + (find_s_size get_struct_size sid.node)
 		
             |Tunion uid ->
-              (acc+(acc mod 4)) + (find_u_size get_union_size uid.node)
+              (arrondir_4 acc) + (find_u_size get_union_size uid.node)
 	    
             |_ -> acc
 	in
 	let () = Hashtbl.add decl id.node (t,acc) in
 	s   
       ) 0 s
-  in (z + (z mod 4),decl)
+  in ((arrondir_4 z),decl)
 
 and get_size  = function
   |Tchar -> 1
@@ -128,12 +130,19 @@ let ajouter_string x =
     @[Dlabel label ]@ x in 
   label
     
-let get_position s id = assert false
+let get_position s id = 
+  match s with
+    |Tstruct x -> 
+      let _,d = Hashtbl.find struct_size x.node in
+      let y = Hashtbl.find d id in
+      (snd y)
+    |Tunion  x -> 0
+    |_ -> 0
 let popn n = Binop(Add,SP,SP,Oimm n)
 let pushn n = Binop(Sub,SP,SP,Oimm n)
 let push = pushn 4
 let pop = popn 4
-let arrondir_4 x = ((x+3)/4)*4
+
 (*push_s_t permet de transferer les donne .on supose que addres de depart
   est deja dans regisgre AO addrese de destination est dans sp
 tous sont aligne .il faut empiler apres   negative!!!!!!*)
@@ -173,12 +182,12 @@ match e.node with
       if not (Hashtbl.mem genv id.node) then raise Haha;
       [Comment "deb gauche";push;La(A0,id.node);Sw(A0,Areg(0,SP));Comment "fin gauche"]
   end
-|Eunop (Ustar ,expr) ->compile_expr env  expr
+|Eunop (Ustar ,expr) ->compile_expr env  expr 
 |_ -> []
 and
  compile_expr env e =
 match e.node with
-|Enull ->[push;Li(A0,0);Sw(A0,Areg(0,SP))]
+|Enull ->[push;Li(A0,0);Sw(A0,Areg(0,SP)) ; Comment "null fin \n"]
 
 |Econst c -> 
   begin
@@ -186,17 +195,17 @@ match e.node with
       |Cint i -> [push;Li(A0,Int32.to_int i);Sw(A0,Areg(0,SP))]
       |Cstring s -> 
 	begin
-	  let label = (ajouter_string [(Dasciiz( s^"0"))]) in
+	  let label = (ajouter_string [Dasciiz s]) in
 	  [push;
 	   La(A0,label);
-	   Sw(A0,Areg(0,SP))]
+	   Sw(A0,Areg(0,SP));Comment "const str fin \n"]
 	end
   end    
     
 |Eassign (e1,e2) ->
   begin
     let r2 = [Comment "partie2 de affect \n"] @ (compile_expr env e2)
-      @ [Comment "partie2 de affect fin \n"] 
+     
     in
     let r1 = compile_gauche env e1
     in
@@ -215,7 +224,7 @@ match e.node with
 	   pop;
 	   Sw(A1,Areg(0,A0));
 	   Sw(A1,Areg(0,SP))
-	  ]
+	  ] @ [Comment "partie2 de affect fin \n"] 
 	|_ ->[]
     in
     r1@r2@st
@@ -228,27 +237,31 @@ match e.node with
   end
 
 |Eident x ->
-  begin
-    let taille = get_size e.loc in
-    let addrese = begin
-      try
-	let fp = StrMap.find x.node env in
-	[push;Binop(Add,A0,FP,Oimm(fp));Sw(A0,Areg(0,SP))]
-      with Not_found ->
-	if not (Hashtbl.mem genv x.node) then raise Haha;
-	[push;La(A0,x.node);Sw(A0,Areg(0,SP))]
+  let taille = get_size e.loc in
+  let addrese = 
+    begin
+      match e.loc with
+	|Tpointer Tchar ->	
+	  begin
+	    try
+	      let fp = StrMap.find x.node env in
+	      [push;Lw(A0,Areg(fp,FP));Binop(Add,A0,FP,Oimm(fp));Sw(A0,Areg(0,SP))]
+	    with Not_found ->
+	      if not (Hashtbl.mem genv x.node) then raise Haha;
+	      [push;La(A0,x.node);Sw(A0,Areg(0,SP))](*pour plus tard*)
+	  end
+	|_ ->	
+	  begin
+	    try
+	      let fp = StrMap.find x.node env in
+	      [push;Binop(Add,A0,FP,Oimm(fp));Sw(A0,Areg(0,SP))]
+	    with Not_found ->
+	      if not (Hashtbl.mem genv x.node) then raise Haha;
+	      [push;La(A0,x.node);Sw(A0,Areg(0,SP))]
+	  end
     end
-    in
-    addrese@[Lw(A0,Areg(0,SP));pop]@ [(pushn (arrondir_4 taille))]@(push_s_t 0 taille 0)
-  (* begin
-     try
-     let fp = StrMap.find x.node env in
-     [push;Lw(A0,Areg(fp,FP));Sw(A0,Areg(0,SP))]
-     with Not_found ->
-     if not (Hashtbl.mem genv x.node) then raise Haha;
-     [push;Lw(A0,Alab x.node);Sw(A0,Areg(0,SP))]
-     end*)
-  end
+  in
+ [Comment "id deb"]@ addrese @[Lw(A0,Areg(0,SP));pop]@ [(pushn (arrondir_4 taille))]@(push_s_t 0 taille 0)@[Comment "id fin fin"]
 
 |Ebinop (op,e1,e2) ->
   begin
@@ -270,13 +283,13 @@ match e.node with
     let code_e1 = compile_expr env e1 in
     let code_e2 = compile_expr env e2 in
     
-   code_e1 @ code_e2 @ 
+  [Comment "deb binop"]@ code_e1 @ code_e2 @ 
       [Lw(A0,Areg(4,SP));
        Lw(A1,Areg(0,SP));
        pop;
        Binop(operation,A0,A0,Oreg A1);
        Sw(A0,Areg(0,SP));
-      ]@(logique op)
+      ]@(logique op)@[Comment "fin binop"]
    
   end
 |Eunop (op,expr) ->
@@ -298,13 +311,20 @@ match e.node with
     |Upost_inc->incre@ enrgister@post
     |Upre_dec->de_incre@ enrgister@pre
     |Upost_dec-> de_incre@ enrgister@post	
-    |_ -> [Inline "op un "] 
+    |_ -> [] 
   in
   begin
     match op with
     |Upre_inc | Upost_inc | Upre_dec | Upost_dec
       ->com_expr_gauche@com_expr@changer@[pop]
-    |Ustar  -> com_expr @[Lw(A0,Areg(0,SP));Lw(A0,Areg(0,A0));Sw(A0,Areg(0,SP))]
+    |Ustar  ->
+      begin
+	match expr.loc with
+	  |Tpointer Tchar ->
+	    com_expr @[Lw(A0,Areg(0,SP));Lbu(A0,Areg(0,A0));Sb(A0,Areg(0,SP))]
+	  |_ ->
+	    com_expr @[Lw(A0,Areg(0,SP));Lw(A0,Areg(0,A0));Sw(A0,Areg(0,SP))]
+      end 
     |Uplus  -> com_expr
     |Uminus -> com_expr @[Lw(A0,Areg(0,SP));Binop(Sub,A0,ZERO,Oreg( A0));Sw(A0,Areg(0,SP))]
     |Unot  ->com_expr @[ Lw(A0,Areg(0,SP));Binop(Eq,A0,ZERO,Oreg( A0));Sw(A0,Areg(0,SP))] 
@@ -314,7 +334,7 @@ match e.node with
   begin
       let com_gauche = compile_gauche env ex in
       let p = get_position ex.loc id.node in
-      [Lw(A0,Areg(0,SP));pop;Binop(Sub,A0,A0,Oimm p)]@ []
+      com_gauche @ [Lw(A0,Areg(0,SP));pop;Binop(Sub,A0,A0,Oimm p)]@ []
   end 
     
 |Ecall(id,iel) ->
@@ -331,15 +351,12 @@ match e.node with
   in 
   let appler = [Comment "args fin";Jal(id.node)]
   in
-  let resultat = 
-    if (taille_retour > 0) then
-      [Sw(V0,Areg(0,SP))]
-    else []
-  in
   let apres_appel = [Binop(Add,SP,SP,Oimm(taille))] 
   in
   reserver_taille_retour@ passer_arg @ appler @ apres_appel
-    
+
+(*------------------------------------------------------------------------------------------------------------------------*)
+(*statement ______________________________________________________________________________________________________________*)    
 (* pour les label de boucle et de branchement *)
 let cont_br = ref 0
 let loop_count = ref 0
@@ -406,7 +423,7 @@ let rec compile_stmt env tframe (t_fun,dec_args) i =
 match i.node with
 |Sskip -> []
 |Sexpr e ->
-  let taille = get_size e.loc in
+  let taille =arrondir_4 (get_size e.loc) in
   (compile_expr env e) @[ (Binop(Add,SP,SP,Oimm taille))]         (* [pop]*)
 |Sif (e,s1,s2) ->
   let res = compile_expr env e 
@@ -465,14 +482,14 @@ match i.node with
   let env = List.fold_left 
     (fun env (t,id) -> 
       let s =  !changer  in 
-      changer := s + (get_size t) ;
+      changer := s + arrondir_4 (get_size t) ;
       StrMap.add id.node s  env) env (fst block) 
   in
   let stm = List.map (compile_stmt env tframe (t_fun,dec_args) ) (snd block)
   in
   List.concat stm 
 
-|Sreturn r -> (*arefaire !!!!!*)
+|Sreturn r -> 
   begin
     let exit_code  =
       [Lw(RA,Areg(0,FP));
@@ -501,7 +518,7 @@ let recup_data vd = let ty = fst vd in
                       in
 		    match ty with 
 		    |Tint ->[lab;Dword [Int32.zero]]
-		    |Tchar ->[lab;Dbyte 1]
+		    |Tchar ->[lab;Dbyte 0]
 		    |Tstruct id|Tunion id ->
 		    begin
 		      let taille = get_size ty in

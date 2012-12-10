@@ -10,9 +10,14 @@ prog_main:
 	move $fp, $sp
 	sw   $ra, 0($fp)
 	sub  $sp, $sp, 8
+#begin block
+#deb gauche
 	sub  $sp, $sp, 4
 	add  $a0, $fp, -8
 	sw   $a0, 0($sp)
+#fin gauche
+#partie2 de affect 
+
 	sub  $sp, $sp, 4
 	li   $a0, 65
 	sw   $a0, 0($sp)
@@ -21,21 +26,47 @@ prog_main:
 	add  $sp, $sp, 4
 	sw   $a1, 0($a0)
 	sw   $a1, 0($sp)
+#partie2 de affect fin 
+
 	add  $sp, $sp, 4
+#taille retour
 	add  $sp, $sp, -4
-	sub  $sp, $sp, 4
-	lw   $a0, -8($fp)
-	sw   $a0, 0($sp)
-	jal  putchar
-	add  $sp, $sp, 4
-	add  $sp, $sp, 4
-	add  $sp, $sp, -4
+#args 
+#id deb
 	sub  $sp, $sp, 4
 	add  $a0, $fp, -8
 	sw   $a0, 0($sp)
+	lw   $a0, 0($sp)
+	add  $sp, $sp, 4
 	sub  $sp, $sp, 4
-	lw   $a0, -8($fp)
+	lw   $a1, 0($a0)
+	sw   $a1, 0($sp)
+#id fin fin
+#args fin
+	jal  putchar
+	add  $sp, $sp, 4
+	add  $sp, $sp, 4
+#taille retour
+	add  $sp, $sp, -4
+#args 
+#deb gauche
+	sub  $sp, $sp, 4
+	add  $a0, $fp, -8
 	sw   $a0, 0($sp)
+#fin gauche
+#partie2 de affect 
+
+#deb binop
+#id deb
+	sub  $sp, $sp, 4
+	add  $a0, $fp, -8
+	sw   $a0, 0($sp)
+	lw   $a0, 0($sp)
+	add  $sp, $sp, 4
+	sub  $sp, $sp, 4
+	lw   $a1, 0($a0)
+	sw   $a1, 0($sp)
+#id fin fin
 	sub  $sp, $sp, 4
 	li   $a0, 1
 	sw   $a0, 0($sp)
@@ -44,21 +75,39 @@ prog_main:
 	add  $sp, $sp, 4
 	add  $a0, $a0, $a1
 	sw   $a0, 0($sp)
+#fin binop
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
 	sw   $a1, 0($a0)
 	sw   $a1, 0($sp)
+#partie2 de affect fin 
+
+#args fin
 	jal  putchar
 	add  $sp, $sp, 4
 	add  $sp, $sp, 4
+#taille retour
 	add  $sp, $sp, -4
+#args 
+#deb gauche
 	sub  $sp, $sp, 4
 	add  $a0, $fp, -4
 	sw   $a0, 0($sp)
+#fin gauche
+#partie2 de affect 
+
+#deb binop
+#id deb
 	sub  $sp, $sp, 4
-	lw   $a0, -8($fp)
+	add  $a0, $fp, -8
 	sw   $a0, 0($sp)
+	lw   $a0, 0($sp)
+	add  $sp, $sp, 4
+	sub  $sp, $sp, 4
+	lw   $a1, 0($a0)
+	sw   $a1, 0($sp)
+#id fin fin
 	sub  $sp, $sp, 4
 	li   $a0, 1
 	sw   $a0, 0($sp)
@@ -67,21 +116,29 @@ prog_main:
 	add  $sp, $sp, 4
 	add  $a0, $a0, $a1
 	sw   $a0, 0($sp)
+#fin binop
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
 	sw   $a1, 0($a0)
 	sw   $a1, 0($sp)
+#partie2 de affect fin 
+
+#args fin
 	jal  putchar
 	add  $sp, $sp, 4
 	add  $sp, $sp, 4
+#taille retour
 	add  $sp, $sp, -4
+#args 
 	sub  $sp, $sp, 4
 	li   $a0, 10
 	sw   $a0, 0($sp)
+#args fin
 	jal  putchar
 	add  $sp, $sp, 4
 	add  $sp, $sp, 4
+#fin block
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
 	add  $sp, $sp, 16
@@ -97,7 +154,6 @@ sbrk:
 	li   $v0, 9
 	lw   $a0, 0($sp)
 	syscall
-	move $v0, $a0
 	jr   $ra
 	.data
 
