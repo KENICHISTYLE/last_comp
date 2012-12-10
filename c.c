@@ -20,9 +20,9 @@ for (c=0;c < 3;c++)
 	//while(j < 5 ){
 	//int y;
 	//y = j;
-	putchar(65+1);
-	putchar(65+1);
-	putchar(10);
+	//putchar(65+1);
+	putchar(65+c);
+	//putchar(10);
 	//j++;
 	//j++;
 	//}

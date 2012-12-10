@@ -127,7 +127,7 @@ let ajouter_string x =
   in
   let () =
     string_const:= !string_const 
-    @[Dlabel label ]@ x in 
+    @[Dalign 4; Dlabel label ]@ x in 
   label
     
 let get_position s id = 
@@ -299,6 +299,7 @@ match e.node with
 	
     else 1 in
     let mul_point = [Lw(A0,Areg(0,SP)); Binop(Mul,A0,A0,Oimm nombre);Sw(A0,Areg(0,SP))] in
+
     [Comment "deb binop"]@ code_e1 @ code_e2 @ mul_point@
       
       [Lw(A0,Areg(4,SP));
@@ -498,6 +499,8 @@ match i.node with
   stmt1@ ((Label label1)::res)@ test @ core@stmt2@[B label1;Label label2]
 
 |Sblock  block (*il faut compter les valeur a refaire !!!!!*)->
+  fst (compile_block env (t_fun,dec_args) block)  
+(*
   let changer = ref (tframe+4)
   in 
   let env = List.fold_left 
@@ -513,6 +516,7 @@ match i.node with
     @[Comment "supprimer block";     
       Binop(Add,SP,SP,Oimm(!changer - tframe - 4 ));     
       Comment "Block supprimer"] 
+*)  
 
 |Sreturn r -> 
   begin
@@ -534,27 +538,7 @@ match i.node with
   end
 
 
-
-(* vd signfi variable declaration ------ a reffaire !!!!!!!!!*) 
-let recup_data vd = let ty = fst vd in
-		    let id = snd vd in
-		    let lab = Dlabel id.node in
-                    let () = Hashtbl.add genv id.node ()
-                      in
-		    match ty with 
-		    |Tint ->[lab;Dword [Int32.zero]]
-		    |Tchar ->[lab;Dbyte 0]
-		    |Tstruct id|Tunion id ->
-		    begin
-		      let taille = get_size ty in
-		     [lab;Dspace taille]
-		    end
-		    |Tpointer cy ->[lab;Daddress id.node]
-		    |Tnull|Tvoid -> [] 
-		    
-
-
-let compile_block env (t_fun,dec_args) block = 
+and compile_block env (t_fun,dec_args) block = 
   let frame = ref 4
   in   
   let env = List.fold_left 
@@ -568,11 +552,32 @@ let compile_block env (t_fun,dec_args) block =
   let stm = 
     List.fold_left 
       (fun acc i -> 
-	acc ++(mips(compile_stmt env (!frame -4) (t_fun,dec_args) i))
-      ) nop (snd block)
+	acc @ ((compile_stmt env (!frame -4) (t_fun,dec_args) i))
+      ) [] (snd block)
   in
-   stm ++ mips [Comment "fin block"],( !frame -4) 
+   stm @ [Comment "fin block"],( !frame -4) 
 
+
+(* vd signfi variable declaration ------ a reffaire !!!!!!!!!*) 
+let recup_data vd =
+  let apre = 
+  let ty = fst vd in
+  let id = snd vd in
+  let lab = Dlabel id.node in
+  let () = Hashtbl.add genv id.node ()
+  in
+  match ty with 
+  |Tint ->[lab;Dword [Int32.zero]]
+  |Tchar ->[lab;Dbyte 0]
+  |Tstruct id|Tunion id ->
+    begin
+      let taille = get_size ty in
+      [lab;Dspace taille]
+    end
+  |Tpointer cy ->[lab;Daddress id.node]
+  |Tnull|Tvoid -> [] in
+[Dalign 4] @apre
+		    
 let predfun = 
   let putchar =
     let label = Label "putchar"
@@ -599,7 +604,7 @@ let compile_data prog = function
 |Dvars dvl -> 
   let res1 = List.map (fun v -> recup_data v ) dvl in
   let res =List.concat res1
-  in {text = prog.text ; data = res}
+  in {text = prog.text ; data = prog.data @ res}
 
 | Dstruct (id, decls)  -> Hashtbl.add struct_env id.node decls;prog
 
@@ -644,7 +649,7 @@ let compile_data prog = function
     else 
       nop
   in
-  let code = prog.text ++ label ++ save ++ frame ++ core
+  let code = prog.text ++ label ++ save ++ frame ++ (mips core)
   in  
   {text = code ++ exit_code ; data = data}
   
@@ -662,5 +667,7 @@ let compile_file ast =
     let sortie =List.fold_left (fun acc d -> compile_data acc d) prog  ast 
     in 
     {text = main ++ sortie.text ++ predfun; data = sortie.data @ !string_const}
-  with _ ->
+  with Not_found -> failwith "not found "
+ (* with _ ->
     failwith !msg 
+*)
