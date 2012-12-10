@@ -86,10 +86,10 @@ and get_size  = function
   |Tint |Tpointer _ ->4
     
   |Tunion y ->
-    (find_s_size get_struct_size y.node)
+    (find_u_size get_union_size y.node)
   
   |Tstruct y  ->
-    (find_u_size get_union_size y.node)
+    (find_s_size get_struct_size y.node)
       
   |_ -> 0 (*on va rattraper les autres cas *)
     
@@ -183,6 +183,12 @@ match e.node with
       [Comment "deb gauche";push;La(A0,id.node);Sw(A0,Areg(0,SP));Comment "fin gauche"]
   end
 |Eunop (Ustar ,expr) ->compile_expr env  expr 
+|Edot(ex,id) ->
+  begin
+    let com_gauche = compile_gauche env ex in
+      let p = get_position ex.loc id.node in
+      com_gauche @ [Lw(A0,Areg(0,SP));pop;Binop(Add,A0,A0,Oimm p);push;Sw(A0,Areg(0,SP))]
+  end
 |_ -> []
 and
  compile_expr env e =
@@ -338,7 +344,7 @@ match e.node with
       ->com_expr_gauche@com_expr@changer@[pop]
     |Ustar  ->
       begin
-	com_expr @[Lw(A0,Areg(0,SP));pop]@[pushn( arrondir_4 (get_size e.loc))]
+ 	com_expr @[Lw(A0,Areg(0,SP));pop]@[pushn( arrondir_4 (get_size e.loc))]
 	@[Move(A1,SP)]@(lire (get_size e.loc) 0)
       (*match expr.loc with
 	|Tpointer Tchar ->
@@ -356,7 +362,8 @@ match e.node with
   begin
       let com_gauche = compile_gauche env ex in
       let p = get_position ex.loc id.node in
-      com_gauche @ [Lw(A0,Areg(0,SP));pop;Binop(Sub,A0,A0,Oimm p)]@ []
+      com_gauche @ [Lw(A0,Areg(0,SP));pop;Binop(Add,A0,A0,Oimm p)]@ [pushn( arrondir_4 (get_size e.loc))]
+      @[Move(A1,SP)]@(lire (get_size e.loc) 0)
   end 
     
 |Ecall(id,iel) ->
@@ -560,23 +567,23 @@ and compile_block env (t_fun,dec_args) block =
 
 (* vd signfi variable declaration ------ a reffaire !!!!!!!!!*) 
 let recup_data vd =
-  let apre = 
+  let aligne = [Dalign 4] in
   let ty = fst vd in
   let id = snd vd in
   let lab = Dlabel id.node in
   let () = Hashtbl.add genv id.node ()
   in
   match ty with 
-  |Tint ->[lab;Dword [Int32.zero]]
+  |Tint ->aligne@ [lab;Dword [Int32.zero]]
   |Tchar ->[lab;Dbyte 0]
   |Tstruct id|Tunion id ->
     begin
       let taille = get_size ty in
-      [lab;Dspace taille]
+      aligne@ [lab;Dspace taille]
     end
-  |Tpointer cy ->[lab;Daddress id.node]
-  |Tnull|Tvoid -> [] in
-[Dalign 4] @apre
+  |Tpointer cy ->aligne@ [lab;Daddress id.node]
+  |Tnull|Tvoid -> [] 
+
 		    
 let predfun = 
   let putchar =
@@ -599,16 +606,18 @@ let predfun =
   in
   mips (putchar @ sbrk)
 
+let compile_st_un prog = function  
+  | Dstruct (id, decls)  -> Hashtbl.add struct_env id.node decls;prog
+    
+  | Dunion  (id, decls)  -> Hashtbl.add union_env  id.node decls;prog 
+
+  | _ -> prog
 
 let compile_data prog = function
 |Dvars dvl -> 
   let res1 = List.map (fun v -> recup_data v ) dvl in
   let res =List.concat res1
   in {text = prog.text ; data = prog.data @ res}
-
-| Dstruct (id, decls)  -> Hashtbl.add struct_env id.node decls;prog
-
-| Dunion  (id, decls)  -> Hashtbl.add union_env  id.node decls;prog 
 
 | Dfun (t,id,dvl,infb) -> 
   let label =   
@@ -652,7 +661,9 @@ let compile_data prog = function
   let code = prog.text ++ label ++ save ++ frame ++ (mips core)
   in  
   {text = code ++ exit_code ; data = data}
-  
+
+| _ -> prog
+
 let main =
   mips
   [
@@ -664,6 +675,8 @@ let main =
 
 let compile_file ast = 
   try
+    let sortie =List.fold_left (fun acc d -> compile_st_un acc d) prog  ast 
+    in 
     let sortie =List.fold_left (fun acc d -> compile_data acc d) prog  ast 
     in 
     {text = main ++ sortie.text ++ predfun; data = sortie.data @ !string_const}

@@ -9,7 +9,7 @@ prog_main:
 	sub  $sp, $sp, 4
 	move $fp, $sp
 	sw   $ra, 0($fp)
-	sub  $sp, $sp, 0
+	sub  $sp, $sp, 24
 #begin block
 	sub  $sp, $sp, 4
 	li   $a0, 1
@@ -19,12 +19,12 @@ prog_main:
 	add  $sp, $sp, 4
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
-	add  $sp, $sp, 8
+	add  $sp, $sp, 32
 	jr   $ra
 #fin block
 	lw   $ra, 0($fp)
 	lw   $fp, 4($fp)
-	add  $sp, $sp, 8
+	add  $sp, $sp, 32
 	jr   $ra
 putchar:
 	lw   $a0, 0($sp)
@@ -37,8 +37,12 @@ sbrk:
 	li   $v0, 9
 	lw   $a0, 0($sp)
 	syscall
+	sw   $v0, 4($sp)
 	jr   $ra
 	.data
+	.align 4
+c_1:
+	.word 0
 b_2:
-	.byte 1
+	.byte 0
 
