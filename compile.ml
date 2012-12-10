@@ -241,7 +241,7 @@ match e.node with
   let addrese = 
     begin
       match e.loc with
-	|Tpointer Tchar ->	
+	|Tpointer _ ->	
 	  begin
 	    try
 	      let fp = StrMap.find x.node env in
@@ -261,7 +261,15 @@ match e.node with
 	  end
     end
   in
- [Comment "id deb"]@ addrese @[Lw(A0,Areg(0,SP));pop]@ [(pushn (arrondir_4 taille))]@(push_s_t 0 taille 0)@[Comment "id fin fin"]
+  let load =  match e.loc with 
+    |Tchar ->[Lbu(A0,Areg(0,SP));pop]
+    |_->[Lw(A0,Areg(0,SP));pop]
+  in
+  [Comment "id deb"]@
+    addrese @load@ 
+    [(pushn (arrondir_4 taille))]@
+    (push_s_t 0 taille 0)@
+    [Comment "id fin fin"]
 
 |Ebinop (op,e1,e2) ->
   begin
@@ -282,16 +290,23 @@ match e.node with
     in
     let code_e1 = compile_expr env e1 in
     let code_e2 = compile_expr env e2 in
-    
-  [Comment "deb binop"]@ code_e1 @ code_e2 @ 
+    let nombre  =
+      if is_pointer e1.loc
+      then  
+	let (Tpointer x) = e1.loc in    
+	get_size x	  
+      else 1 
+    in
+    let mul_point = [Binop(Mul,A0,A0,Oimm nombre);Sw(A0,Areg(0,SP))] in
+    [Comment "deb binop"]@ code_e1 @ code_e2 @ mul_point@
       [Lw(A0,Areg(4,SP));
        Lw(A1,Areg(0,SP));
        pop;
        Binop(operation,A0,A0,Oreg A1);
        Sw(A0,Areg(0,SP));
       ]@(logique op)@[Comment "fin binop"]
-   
   end
+
 |Eunop (op,expr) ->
   let com_expr = compile_expr env expr in
   let com_expr_gauche = compile_gauche env expr in
@@ -319,12 +334,13 @@ match e.node with
       ->com_expr_gauche@com_expr@changer@[pop]
     |Ustar  ->
       begin
-	match expr.loc with
-	  |Tpointer Tchar ->
-	    com_expr @[Lw(A0,Areg(0,SP));Lbu(A0,Areg(0,A0));Sb(A0,Areg(0,SP))]
-	  |_ ->
+	  match expr.loc with
+	    |Tpointer Tchar ->
+	    com_expr @[Lw(A0,Areg(0,SP));Lbu(A0,Areg(0,A0));Sw(A0,Areg(0,SP))]
+	    |_ ->
 	    com_expr @[Lw(A0,Areg(0,SP));Lw(A0,Areg(0,A0));Sw(A0,Areg(0,SP))]
-      end 
+	  
+	  end 
     |Uplus  -> com_expr
     |Uminus -> com_expr @[Lw(A0,Areg(0,SP));Binop(Sub,A0,ZERO,Oreg( A0));Sw(A0,Areg(0,SP))]
     |Unot  ->com_expr @[ Lw(A0,Areg(0,SP));Binop(Eq,A0,ZERO,Oreg( A0));Sw(A0,Areg(0,SP))] 
@@ -477,18 +493,22 @@ match i.node with
   stmt1@ ((Label label1)::res)@ test @ core@stmt2@[B label1;Label label2]
 
 |Sblock  block (*il faut compter les valeur a refaire !!!!!*)->
-  let changer = ref tframe
+  let changer = ref (tframe+4)
   in 
   let env = List.fold_left 
     (fun env (t,id) -> 
       let s =  !changer  in 
       changer := s + arrondir_4 (get_size t) ;
-      StrMap.add id.node s  env) env (fst block) 
+      StrMap.add id.node (-s)  env) env (fst block) 
   in
-  let stm = List.map (compile_stmt env tframe (t_fun,dec_args) ) (snd block)
+  let stm = List.map (compile_stmt env (!changer -4) (t_fun,dec_args) ) (snd block)
   in
-  List.concat stm 
-
+  (List.concat stm)
+    @[Comment "supprimer block";     
+      Binop(Add,SP,SP,Oimm(!changer - tframe - 4 ));
+     
+      Comment "Block supprimer"] 
+    
 |Sreturn r -> 
   begin
     let exit_code  =
@@ -546,8 +566,7 @@ let compile_block env (t_fun,dec_args) block =
 	acc ++(mips(compile_stmt env (!frame -4) (t_fun,dec_args) i))
       ) nop (snd block)
   in
-   stm ++ mips [Comment "fin block"],( !frame -4) (*  je crois la taille de  frame !=  !frame *)
-
+   stm ++ mips [Comment "fin block"],( !frame -4) 
 
 let predfun = 
   let putchar =
@@ -564,7 +583,8 @@ let predfun =
     [Label "sbrk";
      Li(V0,9);
      Lw(A0,Areg(0,SP));
-     Syscall;     
+     Syscall;
+     Sw(V0,Areg(4,SP));
      Jr RA]
   in
   mips (putchar @ sbrk)

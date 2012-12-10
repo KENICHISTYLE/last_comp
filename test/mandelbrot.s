@@ -32,6 +32,8 @@ add:
 	lw   $a1, 0($a0)
 	sw   $a1, 0($sp)
 #id fin fin
+	mul  $a0, $a0, 1
+	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -75,6 +77,8 @@ sub:
 	lw   $a1, 0($a0)
 	sw   $a1, 0($sp)
 #id fin fin
+	mul  $a0, $a0, 1
+	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -125,6 +129,8 @@ mul:
 	lw   $a1, 0($a0)
 	sw   $a1, 0($sp)
 #id fin fin
+	mul  $a0, $a0, 1
+	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -158,12 +164,16 @@ mul:
 	sub  $sp, $sp, 4
 	li   $a0, 2
 	sw   $a0, 0($sp)
+	mul  $a0, $a0, 1
+	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
 	div  $a0, $a0, $a1
 	sw   $a0, 0($sp)
 #fin binop
+	mul  $a0, $a0, 1
+	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -172,6 +182,8 @@ mul:
 #fin binop
 	sub  $sp, $sp, 4
 	li   $a0, 8192
+	sw   $a0, 0($sp)
+	mul  $a0, $a0, 1
 	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
@@ -216,6 +228,8 @@ div:
 	sub  $sp, $sp, 4
 	li   $a0, 8192
 	sw   $a0, 0($sp)
+	mul  $a0, $a0, 1
+	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -256,12 +270,16 @@ div:
 	sub  $sp, $sp, 4
 	li   $a0, 2
 	sw   $a0, 0($sp)
+	mul  $a0, $a0, 1
+	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
 	div  $a0, $a0, $a1
 	sw   $a0, 0($sp)
 #fin binop
+	mul  $a0, $a0, 1
+	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -278,6 +296,8 @@ div:
 	lw   $a1, 0($a0)
 	sw   $a1, 0($sp)
 #id fin fin
+	mul  $a0, $a0, 1
+	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -314,6 +334,8 @@ of_int:
 	sub  $sp, $sp, 4
 	li   $a0, 8192
 	sw   $a0, 0($sp)
+	mul  $a0, $a0, 1
+	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -349,6 +371,8 @@ iter:
 #id fin fin
 	sub  $sp, $sp, 4
 	li   $a0, 100
+	sw   $a0, 0($sp)
+	mul  $a0, $a0, 1
 	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
@@ -489,6 +513,8 @@ Fin_du_branch_1:
 #args fin
 	jal  of_int
 	add  $sp, $sp, 4
+	mul  $a0, $a0, 1
+	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -528,6 +554,8 @@ Fin_du_branch_2:
 #id fin fin
 	sub  $sp, $sp, 4
 	li   $a0, 1
+	sw   $a0, 0($sp)
+	mul  $a0, $a0, 1
 	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
@@ -846,6 +874,8 @@ run:
 	lw   $a1, 0($a0)
 	sw   $a1, 0($sp)
 #id fin fin
+	mul  $a0, $a0, 1
+	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -1033,6 +1063,8 @@ loop_start_1:
 	lw   $a1, 0($a0)
 	sw   $a1, 0($sp)
 #id fin fin
+	mul  $a0, $a0, 1
+	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -1162,12 +1194,16 @@ loop_start_2:
 	lw   $a1, 0($a0)
 	sw   $a1, 0($sp)
 #id fin fin
+	mul  $a0, $a0, 1
+	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
 	mul  $a0, $a0, $a1
 	sw   $a0, 0($sp)
 #fin binop
+	mul  $a0, $a0, 1
+	sw   $a0, 0($sp)
 	lw   $a0, 4($sp)
 	lw   $a1, 0($sp)
 	add  $sp, $sp, 4
@@ -1291,6 +1327,7 @@ True_branch_3:
 	add  $sp, $sp, 4
 	add  $sp, $sp, 4
 Fin_du_branch_3:
+	add  $sp, $sp, 4
 #deb gauche
 	sub  $sp, $sp, 4
 	add  $a0, $fp, 28
@@ -1326,6 +1363,7 @@ loop_end_2:
 	jal  putchar
 	add  $sp, $sp, 4
 	add  $sp, $sp, 4
+	add  $sp, $sp, 8
 #deb gauche
 	sub  $sp, $sp, 4
 	add  $a0, $fp, -4
@@ -1390,6 +1428,7 @@ sbrk:
 	li   $v0, 9
 	lw   $a0, 0($sp)
 	syscall
+	sw   $v0, 4($sp)
 	jr   $ra
 	.data
 

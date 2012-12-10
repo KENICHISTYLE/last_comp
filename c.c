@@ -12,13 +12,20 @@ int main()
 {
 //int i;
 int c;
-int * t;
-t = &c;
-c = '1';
-//i = f(26);
-putchar(*t);
-//i = putchar(26 + i);
-//putchar (25 + i);
-//putchar(c);
-//return 0;
+c =0;
+for (c=0;c < 3;c++)
+{
+//int j;
+	//j = c;
+	//while(j < 5 ){
+	//int y;
+	//y = j;
+	putchar(65+1);
+	putchar(65+1);
+	putchar(10);
+	//j++;
+	//j++;
+	//}
+}
+
 }
