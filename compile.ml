@@ -195,7 +195,7 @@ match e.node with
       |Cint i -> [push;Li(A0,Int32.to_int i);Sw(A0,Areg(0,SP))]
       |Cstring s -> 
 	begin
-	  let label = (ajouter_string [Dasciiz s]) in
+	  let label = (ajouter_string [Dasciiz (s^"" )]) in
 	  [push;
 	   La(A0,label);
 	   Sw(A0,Areg(0,SP));Comment "const str fin \n"]
@@ -218,6 +218,7 @@ match e.node with
 	 Sb(A1,Areg(0,A0));
 	 Sb(A1,Areg(3,SP))
 	 ]*)
+
 	|Tchar|Tint|Tpointer _ ->
 	  [Lw(A0,Areg(4,SP));
 	   Lw(A1,Areg(0,SP));
@@ -282,8 +283,15 @@ match e.node with
     in
     let code_e1 = compile_expr env e1 in
     let code_e2 = compile_expr env e2 in
+    let nombre  = 
+    if is_pointer e1.loc 
+    then  
+    let (Tpointer x) = e1.loc in    
+    get_size x 
     
-  [Comment "deb binop"]@ code_e1 @ code_e2 @ 
+    else 1 in
+    let mul_point = [Binop(Mul,A0,A0,Oimm nombre);Sw(A0,Areg(0,SP))] in
+  [Comment "deb binop"]@ code_e1 @ code_e2 @ mul_point@
       [Lw(A0,Areg(4,SP));
        Lw(A1,Areg(0,SP));
        pop;
@@ -295,9 +303,10 @@ match e.node with
 |Eunop (op,expr) ->
   let com_expr = compile_expr env expr in
   let com_expr_gauche = compile_gauche env expr in
-  let nombre e = 
+ let nombre e = 
     if is_pointer e.loc 
-    then 4
+    then   let (Tpointer x) = e.loc in    
+    get_size x 
     else 1
   in
   let var = nombre expr in
@@ -319,11 +328,13 @@ match e.node with
       ->com_expr_gauche@com_expr@changer@[pop]
     |Ustar  ->
       begin
-	match expr.loc with
+      com_expr @[Lw(A0,Areg(0,SP));pop]@[pushn( arrondir_4 (get_size e.loc))]
+    @[Move(A1,SP)]@(lire (get_size e.loc) 0)
+	(*match expr.loc with
 	  |Tpointer Tchar ->
 	    com_expr @[Lw(A0,Areg(0,SP));Lbu(A0,Areg(0,A0));Sb(A0,Areg(0,SP))]
 	  |_ ->
-	    com_expr @[Lw(A0,Areg(0,SP));Lw(A0,Areg(0,A0));Sw(A0,Areg(0,SP))]
+	    com_expr @[Lw(A0,Areg(0,SP));Lw(A0,Areg(0,A0));Sw(A0,Areg(0,SP))])*)
       end 
     |Uplus  -> com_expr
     |Uminus -> com_expr @[Lw(A0,Areg(0,SP));Binop(Sub,A0,ZERO,Oreg( A0));Sw(A0,Areg(0,SP))]
@@ -487,7 +498,7 @@ match i.node with
   in
   let stm = List.map (compile_stmt env tframe (t_fun,dec_args) ) (snd block)
   in
-  List.concat stm 
+  List.concat  stm 
 
 |Sreturn r -> 
   begin
@@ -564,7 +575,8 @@ let predfun =
     [Label "sbrk";
      Li(V0,9);
      Lw(A0,Areg(0,SP));
-     Syscall;     
+     Syscall;
+     Sw(V0,Areg(4,SP));
      Jr RA]
   in
   mips (putchar @ sbrk)

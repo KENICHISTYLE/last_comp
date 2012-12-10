@@ -1,6 +1,6 @@
-
-
-int main() {
-	putchar(65 +1);
-  	putchar(10);
+int main()
+{
+  int x;
+  x = 3;
+  return 0;
 }

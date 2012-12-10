@@ -10,9 +10,7 @@ renamer.cmx: ast.cmi renamer.cmi
 mips.cmi:
 mips.cmo: mips.cmi
 mips.cmx: mips.cmi
-compile.cmo: typing.cmi mips.cmi ast.cmi compile.cmi
-compile.cmx: typing.cmx mips.cmx ast.cmi compile.cmi
-main.cmo: typing.cmi renamer.cmi parser.cmi mips.cmi lexer.cmo compile.cmi \
-    ast.cmi
-main.cmx: typing.cmx renamer.cmx parser.cmx mips.cmx lexer.cmx compile.cmx \
-    ast.cmi
+compile.cmo: typing.cmi mips.cmi ast.cmi
+compile.cmx: typing.cmx mips.cmx ast.cmi
+main.cmo: typing.cmi renamer.cmi parser.cmi mips.cmi compile.cmo ast.cmi
+main.cmx: typing.cmx renamer.cmx parser.cmx mips.cmx compile.cmx ast.cmi
